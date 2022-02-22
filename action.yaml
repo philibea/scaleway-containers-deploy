@@ -1,0 +1,41 @@
+name: "scaleway-container-deploy-action"
+description: "This github action will help you to deploy automatically a container on Serverless Container"
+inputs:
+  scw-access-key:
+    description: ""
+    required: true
+  scw-secret-key: 
+    description: "secret key"
+    required: true
+  scw-region:
+    description: "region chosen"
+    default: "fr-par"
+    required: false
+  scw-container-namespace-id:
+    description: "default namespace id where your container will be deploy, if this not required, this action will create a namespace."
+    required: false
+  scw-registry-namespace-id:
+    description: ""
+    required: true
+  scw-registry-image-name:
+    description: ""
+    required: true
+  scw-registry-image-tag:
+    description: ""
+    required: true
+
+
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.scw-access-key }}
+    - ${{ inputs.scw-secret-key }}
+    - ${{ inputs.scw-region }}
+    - ${{ inputs.scw-container-namespace-id }}
+    - ${{ inputs.scw-registry-namespace-id }}
+    - ${{ inputs.scw-registry-image-name }}
+    - ${{ inputs.scw-registry-image-tag }}
+    - ${{ inputs.scw-secret-key }}
+
