@@ -1,0 +1,49 @@
+# only serve a purpose to live test 
+
+on: [push]
+
+jobs:
+  deploy-scaleway-container:
+    runs-on: ubuntu-latest
+    name: A job deploy container
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Export custom variables
+        run: |
+          SAFE_GITHUB_HEAD_REF_SLUG_URL=$(echo $GITHUB_HEAD_REF_SLUG_URL | rev | cut -c-37 | rev)
+          ([[ $GITHUB_REF == 'refs/heads/main' ]] && echo "BRANCH_SLUG=main" || echo "BRANCH_SLUG=$SAFE_GITHUB_HEAD_REF_SLUG_URL") >> $GITHUB_ENV
+
+      - name: Start deployment
+        uses: bobheadxi/deployments@v1.0.1
+        id: deployment
+        with:
+          step: start
+          token: ${{ secrets.GH_TOKEN }}
+          env: ${{ env.BRANCH_SLUG }}
+          ref: ${{ github.head_ref }}
+
+      - name: Scaleway Container Deploy action 
+        id: deploy
+        uses: ./ # Uses an action in the root directory
+        with:
+          scw_access_key:  ${{ secrets.ACCESS_KEY }}
+          scw_secret_key: ${{ secrets.SECRET_KEY }}
+          scw_project_id: 9d1d9183-bc98-4a92-ab54-be5ef9ada957
+          # scw_containers_namespace_id: "ae28eaf1-3b94-4660-bce0-9b0e0a5d1062"
+          scw_registry: "rg.fr-par.scw.cloud/testong/shire-testing:latest"
+          scw_container_port: "80"
+
+      - name: Update deployment status
+        uses: bobheadxi/deployments@v1.0.1
+        if: always()
+        with:
+          step: finish
+          env: ${{ env.BRANCH_SLUG }}
+          token: ${{ secrets.GH_TOKEN }}
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          env_url: https://${{ steps.deploy.outputs.url }}
+
