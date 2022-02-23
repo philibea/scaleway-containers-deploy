@@ -134,13 +134,18 @@ func main() {
 
 	readyContainer, _ := WaitForContainerReady(Client, container)
 
-	fmt.Println("::set-output name=url::", readyContainer.DomainName)
+	fmt.Printf("::set-output name=container_url::%v\n", readyContainer.DomainName)
+	fmt.Printf("::set-output name=url::https://%v\n", readyContainer.DomainName)
+	fmt.Printf("::set-output name=scw_container_id::%v\n", readyContainer.ID)
+	fmt.Printf("::set-output name=scw_namespace_id::%v\n", namespaceContainer.ID)
+
+	// fmt.Println(fmt.Sprintf(`::set-output name=url::https://%s`, readyContainer.DomainName))
 
 	// if DNS is set, need to set the DNS with the container endpoint in CNAME
 	// Then we need to create endpoint custom Domain on containers
 
 	// if ScalewayCustomeDNS == "" {
-	// 	println("ScalewayCustomeDNS")
+	// 	println("ScalewayCustomDNS")
 	// }
 
 }

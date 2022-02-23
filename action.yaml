@@ -20,10 +20,20 @@ inputs:
     description: "Default port where your docker container expose"
     required: false
     default: "80"
+  # scw_debug:
+  #   description: "debug log api call"
+  #   required: false
+  #   default: "0"
 
 outputs:
-  url: 
+  scw_namespace_id:
+    description:  "ID of your container namespace"
+  scw_container_id:
+    description: "ID of your container inside your namespace"
+  container_url: 
     description: 'Url of your container deployed'
+  url:
+    description: "Url with dns set"
 
 
 runs:
@@ -32,6 +42,7 @@ runs:
   args:
     - ${{ inputs.scw_access_key }}
     - ${{ inputs.scw_secret_key }}
+    - ${{ inputs.scw_project_id }}
     - ${{ inputs.scw_containers_namespace_id }}
     - ${{ inputs.scw_registry }}
     - ${{ inputs.scw_container_port }}
