@@ -1,20 +1,37 @@
 # only serve a purpose to live test 
-
-on: [push]
+name: Deploy
+on:
+  pull_request:
+    types: ['opened', 'edited', 'reopened', 'synchronize']
+  push:
+    branches:
+      - main
+  workflow_call:
+    # Map the workflow outputs to job outputs
+    outputs:
+      container_id:
+        description: "ID of your container inside your namespace"
+        value: ${{ jobs.deploy.outputs.scw_container_id }}
+      namespace_id:
+        description: "ID of your container namespace"
+        value: ${{ jobs.deploy.outputs.scw_namespace_id }}
 
 jobs:
   deploy-scaleway-container:
     runs-on: ubuntu-latest
-    name: A job deploy container
+    name: deploy scaleway serverless container 
     steps:
       # To use this repository's private action,
       # you must check out the repository
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Export custom variables
         run: |
-          SAFE_GITHUB_HEAD_REF_SLUG_URL=$(echo $GITHUB_HEAD_REF_SLUG_URL | rev | cut -c-37 | rev)
+          SAFE_GITHUB_HEAD_REF_SLUG_URL=$(echo $GITHUB_HEAD_REF | rev | cut -c-37 | rev)
           ([[ $GITHUB_REF == 'refs/heads/main' ]] && echo "BRANCH_SLUG=main" || echo "BRANCH_SLUG=$SAFE_GITHUB_HEAD_REF_SLUG_URL") >> $GITHUB_ENV
+          
+      - uses: hmarr/debug-action@v2
 
       - name: Start deployment
         uses: bobheadxi/deployments@v1.0.1
@@ -24,26 +41,40 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
           env: ${{ env.BRANCH_SLUG }}
           ref: ${{ github.head_ref }}
+          debug: true
 
       - name: Scaleway Container Deploy action 
         id: deploy
-        uses: ./ # Uses an action in the root directory
+        uses: ./
         with:
+          type: "deploy"
           scw_access_key:  ${{ secrets.ACCESS_KEY }}
           scw_secret_key: ${{ secrets.SECRET_KEY }}
-          scw_project_id: 9d1d9183-bc98-4a92-ab54-be5ef9ada957
+          # scw_project_id: 9d1d9183-bc98-4a92-ab54-be5ef9ada957
           # scw_containers_namespace_id: "ae28eaf1-3b94-4660-bce0-9b0e0a5d1062"
           scw_registry: "rg.fr-par.scw.cloud/testong/shire-testing:latest"
           scw_container_port: "80"
+
+      - name: check output 
+        shell: bash
+        run: |
+          echo "${{ steps.deploy.outputs }}"
+          echo "${{ steps.deploy.outputs.url }}"
+          echo "${{ steps.deploy.outputs.container_url }}"
+          echo "${{ steps.deploy.outputs.scw_container_id }}"
+          echo "${{ steps.deploy.outputs.scw_namespace_id }}"
 
       - name: Update deployment status
         uses: bobheadxi/deployments@v1.0.1
         if: always()
         with:
+          debug: true
           step: finish
           env: ${{ env.BRANCH_SLUG }}
           token: ${{ secrets.GH_TOKEN }}
           status: ${{ job.status }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: https://${{ steps.deploy.outputs.url }}
+          env_url: ${{ steps.deploy.outputs.url }}
+    
+
 

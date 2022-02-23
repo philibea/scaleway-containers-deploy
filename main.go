@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	EnvType                 = "INPUT_TYPE" // deploy || teardown
 	EnvAccessKey            = "INPUT_SCW_ACCESS_KEY"
 	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
 	EnvContainerNamespaceID = "INPUT_SCW_CONTAINERS_NAMESPACE_ID"
@@ -42,12 +43,12 @@ func CreateClient(Region scw.Region) (*scw.Client, error) {
 	// required to initialize the client
 	ScalewayAccessKey := os.Getenv(EnvAccessKey)
 	ScalewaySecretKey := os.Getenv(EnvSecretKey)
-	ScalewayProjectID := os.Getenv(EnvProjectID)
+	// ScalewayProjectID := os.Getenv(EnvProjectID)
 
 	// Create a Scaleway client
 	client, err := scw.NewClient(
 		scw.WithAuth(ScalewayAccessKey, ScalewaySecretKey),
-		scw.WithDefaultProjectID(ScalewayProjectID),
+		// scw.WithDefaultProjectID(ScalewayProjectID),
 	)
 
 	if err != nil {
@@ -84,7 +85,9 @@ func GetContainerName(PathRegistry string) string {
 	return name
 }
 
-func main() {
+func Deploy() {
+	fmt.Println("Deploy")
+
 	PathRegistry := os.Getenv(EnvPathRegistry)
 
 	if PathRegistry == "" {
@@ -113,7 +116,7 @@ func main() {
 	//Create or get a serverless container namespace
 	namespaceContainer, err := GetOrCreateContainersNamespace(Client, Region)
 
-	waitForNamespaceReady(Client, namespaceContainer)
+	WaitForNamespaceReady(Client, namespaceContainer)
 
 	if err != nil {
 		fmt.Println("unable to create or get a namespace serverless container : ", err)
@@ -134,13 +137,34 @@ func main() {
 
 	readyContainer, _ := WaitForContainerReady(Client, container)
 
-	fmt.Println("::set-output name=url::", readyContainer.DomainName)
+	fmt.Printf("::set-output name=container_url::%v\n", readyContainer.DomainName)
+	fmt.Printf("::set-output name=url::https://%v\n", readyContainer.DomainName)
+	fmt.Printf("::set-output name=scw_container_id::%v\n", readyContainer.ID)
+	fmt.Printf("::set-output name=scw_namespace_id::%v\n", namespaceContainer.ID)
+
+}
+
+func Teardown() {
+
+}
+
+func main() {
+
+	Type := os.Getenv(EnvType)
+
+	if Type == "deploy" {
+		Deploy()
+
+	}
+	if Type == "teardown" {
+		Teardown()
+	}
 
 	// if DNS is set, need to set the DNS with the container endpoint in CNAME
 	// Then we need to create endpoint custom Domain on containers
 
 	// if ScalewayCustomeDNS == "" {
-	// 	println("ScalewayCustomeDNS")
+	// 	println("ScalewayCustomDNS")
 	// }
 
 }
