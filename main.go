@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	container "github.com/scaleway/scaleway-sdk-go/api/container/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
@@ -29,6 +30,15 @@ var (
 		Nanos:   0,
 	}
 )
+
+func PrintOutputGithubActionVariables(Container *container.Container) {
+
+	fmt.Printf("::set-output name=container_url::%v\n", Container.DomainName)
+	fmt.Printf("::set-output name=url::https://%v\n", Container.DomainName)
+	fmt.Printf("::set-output name=scw_container_id::%v\n", Container.ID)
+	fmt.Printf("::set-output name=scw_namespace_id::%v\n", Container.ID)
+
+}
 
 func envOr(name, def string) string {
 	if d, ok := os.LookupEnv(name); ok {
@@ -73,6 +83,8 @@ func GetRegionFromRegistryPath(PathRegistry string) (scw.Region, error) {
 
 func GetContainerName(PathRegistry string) string {
 
+	const maxLength = 20
+
 	var name string
 	// rg.fr-par.scw.cloud/testing/images:latest
 
@@ -81,7 +93,49 @@ func GetContainerName(PathRegistry string) string {
 	name = strings.ReplaceAll(name, ":", "")
 	name = strings.ReplaceAll(name, "-", "")
 
+	if len(name) > maxLength {
+		name = name[:maxLength]
+	}
+
 	return name
+}
+
+func DeployContainer(Client *scw.Client, Namespace *container.Namespace, ContainerName string, PathRegistry string) (*container.Container, error) {
+
+	fmt.Println("Container Name: ", ContainerName)
+
+	ExistingContainer, _ := isContainerAlreadyCreated(Client, Namespace, ContainerName)
+
+	if ExistingContainer != nil {
+
+		// container already exists and need to be updated
+
+		fmt.Println("Container already exists and will be updated", ExistingContainer)
+
+		Container, err := UpdateDeployedContainer(Client, ExistingContainer, PathRegistry)
+
+		if err != nil {
+			fmt.Println("unable to redeploy this serverless container : ", err)
+			os.Exit(1)
+			return Container, err
+		}
+
+		container, err := WaitForContainerReady(Client, Container)
+
+		return container, err
+
+	} else {
+		Container, err := CreateContainerAndDeploy(Client, Namespace, PathRegistry, ContainerName)
+
+		if err != nil {
+			fmt.Println("unable to create or deploy a serverless container : ", err)
+			os.Exit(1)
+			return Container, err
+		}
+		container, err := WaitForContainerReady(Client, Container)
+
+		return container, err
+	}
 }
 
 func main() {
@@ -123,24 +177,21 @@ func main() {
 
 	ContainerName := GetContainerName(PathRegistry)
 
-	// deploy a container
-	container, err := CreateContainerAndDeploy(Client, namespaceContainer, Region, PathRegistry, ContainerName)
+	Container, err := DeployContainer(Client, namespaceContainer, ContainerName, PathRegistry)
 
 	if err != nil {
-		fmt.Println("unable to create or deploy a serverless container : ", err)
+		fmt.Println("unable to deploy a serverless container : ", err)
 		os.Exit(1)
 		return
 	}
 
-	readyContainer, _ := WaitForContainerReady(Client, container)
-
-	fmt.Println("::set-output name=url::", readyContainer.DomainName)
+	PrintOutputGithubActionVariables(Container)
 
 	// if DNS is set, need to set the DNS with the container endpoint in CNAME
 	// Then we need to create endpoint custom Domain on containers
 
 	// if ScalewayCustomeDNS == "" {
-	// 	println("ScalewayCustomeDNS")
+	// 	println("ScalewayCustomDNS")
 	// }
 
 }

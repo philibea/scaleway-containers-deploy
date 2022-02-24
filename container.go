@@ -125,7 +125,7 @@ func GetOrCreateContainersNamespace(
 		}
 	}
 
-	Description := "Namespace created by a github action"
+	Description := "Namespace created by a github action ( philibea/scaleway-action-container )"
 
 	createdNamespace, err := api.CreateNamespace(&container.CreateNamespaceRequest{
 		Description: &Description,
@@ -140,10 +140,63 @@ func GetOrCreateContainersNamespace(
 	return createdNamespace, nil
 }
 
+func isContainerAlreadyCreated(
+	client *scw.Client,
+	Namespace *container.Namespace,
+	ContainerName string,
+) (*container.Container, error) {
+
+	api := container.NewAPI(client)
+
+	containers, err := api.ListContainers(&container.ListContainersRequest{
+		Region:      Namespace.Region,
+		NamespaceID: Namespace.ID,
+		Name:        &ContainerName,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(containers.Containers) == 0 {
+		return nil, nil
+	}
+
+	return containers.Containers[0], nil
+}
+
+func UpdateDeployedContainer(
+	client *scw.Client,
+	Container *container.Container,
+	PathRegistry string,
+) (*container.Container, error) {
+
+	api := container.NewAPI(client)
+
+	Redeploy := true
+
+	port, _ := strconv.ParseInt(envOr(EnvContainerPort, "80"), 10, 32)
+
+	Port := uint32(port)
+
+	updatedContainer, err := api.UpdateContainer(&container.UpdateContainerRequest{
+		Region:        Container.Region,
+		ContainerID:   Container.ID,
+		RegistryImage: &PathRegistry,
+		Redeploy:      &Redeploy,
+		Port:          &Port,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedContainer, nil
+}
+
 func CreateContainerAndDeploy(
 	client *scw.Client,
 	NamespaceContainer *container.Namespace,
-	Region scw.Region,
 	PathRegistry string,
 	ContainerName string,
 ) (*container.Container, error) {
@@ -163,7 +216,7 @@ func CreateContainerAndDeploy(
 		Name:           ContainerName,
 		NamespaceID:    NamespaceContainer.ID,
 		Port:           &Port,
-		Region:         Region,
+		Region:         NamespaceContainer.Region,
 		RegistryImage:  &PathRegistry,
 		Timeout:        &Timeout,
 	})
@@ -174,7 +227,7 @@ func CreateContainerAndDeploy(
 	}
 
 	deployedContainer, err := api.DeployContainer(&container.DeployContainerRequest{
-		Region:      Region,
+		Region:      NamespaceContainer.Region,
 		ContainerID: createdContainer.ID,
 	})
 
