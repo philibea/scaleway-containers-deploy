@@ -11,8 +11,7 @@ jobs:
   publish:
     runs-on: ubuntu-20.04
     env:
-      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/scaleway-containers-deploy
-      IMAGE_TAG: ${{ github.ref_name }}
+      DOCKER_APP: scaleway-containers-deploy
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -23,8 +22,8 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            name/app
-            ghcr.io/username/app
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_APP }}
+            ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_APP }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
