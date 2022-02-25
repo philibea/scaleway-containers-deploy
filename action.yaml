@@ -1,6 +1,9 @@
 name: "scaleway-container-deploy-action"
 description: "This github action will help you to deploy automatically a container on Serverless Container"
 inputs:
+  type: 
+    description: "This input can be used for deploy or teardown your environment. type by default is deploy ( deploy | teadown )"
+    required: false
   scw_access_key:
     description: "Access Key ( https://console.scaleway.com/project/credentials )"
     required: true
