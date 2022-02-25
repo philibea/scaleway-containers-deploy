@@ -4,24 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	container "github.com/scaleway/scaleway-sdk-go/api/container/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	// async "github.com/scaleway/scaleway-sdk-go/scw/internal/async"
-)
-
-const timeout = 10 * time.Minute
-const retryInterval = 5 * time.Second
-
-const (
-	NamespaceStatusUnknown  = container.NamespaceStatus("unknown")
-	NamespaceStatusReady    = container.NamespaceStatus("ready")
-	NamespaceStatusDeleting = container.NamespaceStatus("deleting")
-	NamespaceStatusError    = container.NamespaceStatus("error")
-	NamespaceStatusLocked   = container.NamespaceStatus("locked")
-	NamespaceStatusCreating = container.NamespaceStatus("creating")
-	NamespaceStatusPending  = container.NamespaceStatus("pending")
 )
 
 func waitForNamespaceReady(client *scw.Client, NamespaceContainer *container.Namespace) (*container.Namespace, error) {
@@ -29,35 +14,16 @@ func waitForNamespaceReady(client *scw.Client, NamespaceContainer *container.Nam
 
 	api := container.NewAPI(client)
 
-	terminalStatus := map[container.NamespaceStatus]struct{}{
-		container.NamespaceStatusReady:  {},
-		container.NamespaceStatusLocked: {},
-		container.NamespaceStatusError:  {},
-	}
-
-	namespace, err := WaitSync(&WaitSyncConfig{
-		Get: func() (interface{}, bool, error) {
-			namespace, err := api.GetNamespace(&container.GetNamespaceRequest{
-				NamespaceID: NamespaceContainer.ID,
-				Region:      NamespaceContainer.Region,
-			})
-			if err != nil {
-				return nil, false, err
-			}
-
-			_, isTerminal := terminalStatus[namespace.Status]
-
-			return namespace, isTerminal, nil
-		},
-		Timeout:          timeout,
-		IntervalStrategy: LinearIntervalStrategy(retryInterval),
+	namespace, err := api.WaitForNamespace(&container.WaitForNamespaceRequest{
+		Region:      NamespaceContainer.Region,
+		NamespaceID: NamespaceContainer.ID,
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to wait for namespace to be ready: %s", err)
+		return namespace, err
 	}
 
-	return namespace.(*container.Namespace), nil
+	return namespace, nil
 
 }
 
@@ -70,35 +36,16 @@ func WaitForContainerReady(
 
 	api := container.NewAPI(client)
 
-	terminalStatus := map[container.ContainerStatus]struct{}{
-		container.ContainerStatusReady:  {},
-		container.ContainerStatusError:  {},
-		container.ContainerStatusLocked: {},
-	}
-
-	_container, err := WaitSync(&WaitSyncConfig{
-		Get: func() (interface{}, bool, error) {
-			container, err := api.GetContainer(&container.GetContainerRequest{
-				ContainerID: Container.ID,
-				Region:      Container.Region,
-			})
-			if err != nil {
-				return nil, false, err
-			}
-
-			_, isTerminal := terminalStatus[container.Status]
-
-			return container, isTerminal, nil
-		},
-		Timeout:          timeout,
-		IntervalStrategy: LinearIntervalStrategy(retryInterval),
+	container, err := api.WaitForContainer(&container.WaitForContainerRequest{
+		Region:      Container.Region,
+		ContainerID: Container.ID,
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to wait for container to be ready: %s", err)
+		return container, err
 	}
 
-	return _container.(*container.Container), nil
+	return container, nil
 }
 
 func GetOrCreateContainersNamespace(
