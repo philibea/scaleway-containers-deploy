@@ -9,7 +9,7 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
-func waitForNamespaceReady(client *scw.Client, NamespaceContainer *container.Namespace) (*container.Namespace, error) {
+func WaitForNamespaceReady(client *scw.Client, NamespaceContainer *container.Namespace) (*container.Namespace, error) {
 	fmt.Println("waiting for namespace to be ready")
 
 	api := container.NewAPI(client)
@@ -184,4 +184,39 @@ func CreateContainerAndDeploy(
 	}
 
 	return deployedContainer, nil
+}
+
+func SetCustomDomainContainer(
+	client *scw.Client,
+	Container *container.Container,
+	Hostname string,
+) (*container.Domain, error) {
+
+	api := container.NewAPI(client)
+
+	ResListDomains, _ := api.ListDomains(&container.ListDomainsRequest{
+		Region:      Container.Region,
+		ContainerID: Container.ID,
+	})
+
+	for _, domain := range ResListDomains.Domains {
+		if domain.Hostname == Hostname {
+			return domain, nil
+		}
+	}
+
+	container, err := api.CreateDomain(
+		&container.CreateDomainRequest{
+			Region:      Container.Region,
+			ContainerID: Container.ID,
+			Hostname:    Hostname,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return container, nil
+
 }

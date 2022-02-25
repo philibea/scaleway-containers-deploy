@@ -11,10 +11,11 @@ import (
 
 const (
 	EnvAccessKey            = "INPUT_SCW_ACCESS_KEY"
-	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
 	EnvContainerNamespaceID = "INPUT_SCW_CONTAINERS_NAMESPACE_ID"
 	EnvContainerPort        = "INPUT_SCW_CONTAINER_PORT"
+	EnvDNS                  = "INPUT_SCW_DNS"
 	EnvPathRegistry         = "INPUT_SCW_REGISTRY"
+	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
 	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
 )
 
@@ -31,12 +32,20 @@ var (
 	}
 )
 
-func PrintOutputGithubActionVariables(Container *container.Container) {
+func PrintOutputGithubActionVariables(Container *container.Container, Domain *container.Domain) {
 
-	fmt.Printf("::set-output name=container_url::%v\n", Container.DomainName)
-	fmt.Printf("::set-output name=url::https://%v\n", Container.DomainName)
-	fmt.Printf("::set-output name=scw_container_id::%v\n", Container.ID)
-	fmt.Printf("::set-output name=scw_namespace_id::%v\n", Container.ID)
+	if Domain != nil {
+		fmt.Printf("::set-output name=url::https://%v\n", Domain.Hostname)
+		fmt.Printf("::set-output name=container_url::%v\n", Container.DomainName)
+		fmt.Printf("::set-output name=scw_container_id::%v\n", Container.ID)
+		fmt.Printf("::set-output name=scw_namespace_id::%v\n", Container.ID)
+	} else {
+		fmt.Printf("::set-output name=container_url::%v\n", Container.DomainName)
+		fmt.Printf("::set-output name=url::https://%v\n", Container.DomainName)
+		fmt.Printf("::set-output name=scw_container_id::%v\n", Container.ID)
+		fmt.Printf("::set-output name=scw_namespace_id::%v\n", Container.ID)
+
+	}
 
 }
 
@@ -138,6 +147,34 @@ func DeployContainer(Client *scw.Client, Namespace *container.Namespace, Contain
 	}
 }
 
+func SetupDomain(Client *scw.Client, Container *container.Container) (*container.Domain, error) {
+	DNSName := os.Getenv(EnvDNS)
+
+	if DNSName != "" {
+
+		_, err := SetDNSRecord(Client, DNSName, Container)
+
+		if err != nil {
+			fmt.Println("unable to set DNS record: ", err)
+		}
+
+		Hostname := Container.Name + "." + DNSName
+
+		ContainerDomain, err := SetCustomDomainContainer(Client, Container, Hostname)
+
+		if err != nil {
+			fmt.Println("unable to set DNS record: ", err)
+			return nil, err
+		}
+
+		println("ContainerDomain", ContainerDomain.Hostname, ContainerDomain.Status)
+
+		return ContainerDomain, nil
+	}
+
+	return nil, nil
+}
+
 func main() {
 	PathRegistry := os.Getenv(EnvPathRegistry)
 
@@ -164,10 +201,10 @@ func main() {
 		return
 	}
 
-	//Create or get a serverless container namespace
+	// Create or get a serverless container namespace
 	namespaceContainer, err := GetOrCreateContainersNamespace(Client, Region)
 
-	waitForNamespaceReady(Client, namespaceContainer)
+	WaitForNamespaceReady(Client, namespaceContainer)
 
 	if err != nil {
 		fmt.Println("unable to create or get a namespace serverless container : ", err)
@@ -185,13 +222,8 @@ func main() {
 		return
 	}
 
-	PrintOutputGithubActionVariables(Container)
+	Domain, _ := SetupDomain(Client, Container)
 
-	// if DNS is set, need to set the DNS with the container endpoint in CNAME
-	// Then we need to create endpoint custom Domain on containers
-
-	// if ScalewayCustomeDNS == "" {
-	// 	println("ScalewayCustomDNS")
-	// }
+	PrintOutputGithubActionVariables(Container, Domain)
 
 }
