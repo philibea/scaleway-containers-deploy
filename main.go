@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	EnvType                 = "INPUT_TYPE"
 	EnvAccessKey            = "INPUT_SCW_ACCESS_KEY"
 	EnvContainerNamespaceID = "INPUT_SCW_CONTAINERS_NAMESPACE_ID"
 	EnvContainerPort        = "INPUT_SCW_CONTAINER_PORT"
@@ -97,10 +98,14 @@ func GetContainerName(PathRegistry string) string {
 	var name string
 	// rg.fr-par.scw.cloud/testing/images:latest
 
-	splitPath := strings.Split(PathRegistry, "/")
-	name = splitPath[2]
-	name = strings.ReplaceAll(name, ":", "")
-	name = strings.ReplaceAll(name, "-", "")
+	// splitPath := strings.Split(PathRegistry, "/")
+	// name = splitPath[2]
+	// name = strings.ReplaceAll(name, ":", "")
+	// name = strings.ReplaceAll(name, "-", "")
+
+	// limitation of naming container with 20 characters
+	splitPath := strings.Split(PathRegistry, ":")
+	name = splitPath[1]
 
 	if len(name) > maxLength {
 		name = name[:maxLength]
@@ -152,7 +157,7 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 
 	if DNSName != "" {
 
-		_, err := SetDNSRecord(Client, DNSName, Container)
+		_, err := AddDNSRecord(Client, DNSName, Container)
 
 		if err != nil {
 			fmt.Println("unable to set DNS record: ", err)
@@ -160,10 +165,14 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 
 		Hostname := Container.Name + "." + DNSName
 
+		dns, err := WaitForDNS(Client, DNSName)
+
+		fmt.Println(dns, err)
+
 		ContainerDomain, err := SetCustomDomainContainer(Client, Container, Hostname)
 
 		if err != nil {
-			fmt.Println("unable to set DNS record: ", err)
+			fmt.Println("unable to set CutomDomain on Container: ", err)
 			return nil, err
 		}
 
@@ -175,8 +184,74 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 	return nil, nil
 }
 
+func Deploy(Client *scw.Client, Region scw.Region, PathRegistry string) (*container.Container, *container.Domain, error) {
+
+	// Create or get a serverless container namespace
+	namespaceContainer, err := GetOrCreateContainersNamespace(Client, Region)
+
+	WaitForNamespaceReady(Client, namespaceContainer)
+
+	if err != nil {
+		fmt.Println("unable to create or get a namespace serverless container : ", err)
+		os.Exit(1)
+		return nil, nil, err
+	}
+
+	ContainerName := GetContainerName(PathRegistry)
+
+	Container, err := DeployContainer(Client, namespaceContainer, ContainerName, PathRegistry)
+
+	if err != nil {
+		fmt.Println("unable to deploy a serverless container : ", err)
+		os.Exit(1)
+		return nil, nil, err
+	}
+
+	Domain, err := SetupDomain(Client, Container)
+
+	if err != nil {
+		fmt.Println("unable to setup dns : ", err)
+	}
+
+	return Container, Domain, nil
+
+}
+
+func Teardown(Client *scw.Client, Region scw.Region, PathRegistry string) (*container.Container, error) {
+
+	ContainerName := GetContainerName(PathRegistry)
+	Container, err := GetContainer(Client, Region, ContainerName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	DNSName := os.Getenv(EnvDNS)
+
+	if DNSName != "" {
+
+		_, err := DeleteDNSRecord(Client, DNSName, Container)
+
+		if err != nil {
+			fmt.Println("unable to remove DNS record: ", err)
+		}
+	}
+
+	ContainerDeleted, err := DeleteContainer(Client, Region, Container)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("Container %v deleted\n", ContainerDeleted.Name)
+
+	return ContainerDeleted, nil
+
+}
+
 func main() {
 	PathRegistry := os.Getenv(EnvPathRegistry)
+	Type := envOr(EnvType, "deploy")
 
 	if PathRegistry == "" {
 		fmt.Println("Env Registry is not set")
@@ -201,29 +276,28 @@ func main() {
 		return
 	}
 
-	// Create or get a serverless container namespace
-	namespaceContainer, err := GetOrCreateContainersNamespace(Client, Region)
+	if Type == "deploy" {
+		Container, Domain, err := Deploy(Client, Region, PathRegistry)
 
-	WaitForNamespaceReady(Client, namespaceContainer)
+		if err != nil {
+			fmt.Println("unable to deploy: ", err)
+			os.Exit(1)
+			return
 
-	if err != nil {
-		fmt.Println("unable to create or get a namespace serverless container : ", err)
-		os.Exit(1)
-		return
+		} else {
+			PrintOutputGithubActionVariables(Container, Domain)
+		}
 	}
 
-	ContainerName := GetContainerName(PathRegistry)
+	if Type == "teardown" {
+		deletedContainer, err := Teardown(Client, Region, PathRegistry)
 
-	Container, err := DeployContainer(Client, namespaceContainer, ContainerName, PathRegistry)
-
-	if err != nil {
-		fmt.Println("unable to deploy a serverless container : ", err)
-		os.Exit(1)
-		return
+		if err != nil {
+			fmt.Println("unable to teardown container: ", err)
+			os.Exit(1)
+			return
+		} else {
+			PrintOutputGithubActionVariables(deletedContainer, nil)
+		}
 	}
-
-	Domain, _ := SetupDomain(Client, Container)
-
-	PrintOutputGithubActionVariables(Container, Domain)
-
 }

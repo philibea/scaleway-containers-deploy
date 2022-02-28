@@ -1,4 +1,5 @@
 
 scw-container-deploy
 .env
+.env.*
 run.sh

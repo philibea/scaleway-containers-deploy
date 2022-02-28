@@ -48,6 +48,54 @@ func WaitForContainerReady(
 	return container, nil
 }
 
+func GetContainer(
+	client *scw.Client,
+	Region scw.Region,
+	ContainerName string,
+) (*container.Container, error) {
+
+	ContainersNamespaceId := os.Getenv(EnvContainerNamespaceID)
+
+	api := container.NewAPI(client)
+
+	if ContainersNamespaceId != "" {
+
+		containersPointer, _ := api.ListContainers(&container.ListContainersRequest{
+			Region:      Region,
+			NamespaceID: ContainersNamespaceId,
+			Name:        &ContainerName,
+		})
+
+		if len(containersPointer.Containers) == 0 {
+			return nil, fmt.Errorf("container %s not found", ContainerName)
+		}
+
+		container := containersPointer.Containers[0]
+
+		return container, nil
+
+	}
+
+	return nil, fmt.Errorf("namespace id not found")
+}
+
+func DeleteContainer(
+	client *scw.Client,
+	Region scw.Region,
+	Container *container.Container,
+) (*container.Container, error) {
+
+	api := container.NewAPI(client)
+
+	container, err := api.DeleteContainer(&container.DeleteContainerRequest{
+		Region:      Region,
+		ContainerID: Container.ID,
+	})
+
+	return container, err
+
+}
+
 func GetOrCreateContainersNamespace(
 	client *scw.Client,
 	Region scw.Region,

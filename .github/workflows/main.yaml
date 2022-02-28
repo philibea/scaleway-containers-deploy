@@ -18,6 +18,7 @@ on:
 
 jobs:
   deploy-scaleway-container:
+    
     runs-on: ubuntu-latest
     name: deploy scaleway serverless container 
     steps:
@@ -47,11 +48,12 @@ jobs:
         id: deploy
         uses: ./ # Uses an action in the root directory
         with:
+          type: deploy
           scw_access_key:  ${{ secrets.ACCESS_KEY }}
           scw_secret_key: ${{ secrets.SECRET_KEY }}
           scw_project_id: 9d1d9183-bc98-4a92-ab54-be5ef9ada957
-          scw_containers_namespace_id: "ae28eaf1-3b94-4660-bce0-9b0e0a5d1062"
-          scw_registry: "rg.fr-par.scw.cloud/testong/shire-testing:latest"
+          scw_containers_namespace_id: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
+          scw_registry: rg.fr-par.scw.cloud/testong/shire-testing:latest
           scw_container_port: "80"
           scw_dns: containers.philibeaux.fr
 
@@ -74,6 +76,56 @@ jobs:
           status: ${{ job.status }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: ${{ steps.deploy.outputs.url }}
+
+  teardown-scaleway-container:
+    name: teardown scaleway serverless container 
+    needs: deploy-scaleway-container
+    runs-on: ubuntu-latest
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Export custom variables
+        run: |
+          SAFE_GITHUB_HEAD_REF_SLUG_URL=$(echo $GITHUB_HEAD_REF | rev | cut -c-37 | rev)
+          ([[ $GITHUB_REF == 'refs/heads/main' ]] && echo "BRANCH_SLUG=main" || echo "BRANCH_SLUG=$SAFE_GITHUB_HEAD_REF_SLUG_URL") >> $GITHUB_ENV
+          
+      - uses: hmarr/debug-action@v2
+
+      - name: Scaleway Container Teardown action 
+        id: deploy
+        uses: ./ # Uses an action in the root directory
+        with:
+          type: teardown
+          scw_access_key:  ${{ secrets.ACCESS_KEY }}
+          scw_secret_key: ${{ secrets.SECRET_KEY }}
+          scw_project_id: 9d1d9183-bc98-4a92-ab54-be5ef9ada957
+          scw_containers_namespace_id: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
+          scw_registry: rg.fr-par.scw.cloud/testong/shire-testing:latest
+          scw_dns: containers.philibeaux.fr
+
+      - name: check output 
+        shell: bash
+        run: |
+          echo "${{ steps.deploy.outputs.url }}"
+          echo "${{ steps.deploy.outputs.container_url }}"
+          echo "${{ steps.deploy.outputs.scw_container_id }}"
+          echo "${{ steps.deploy.outputs.scw_namespace_id }}"
+
+      - name: Update deployment status
+        uses: bobheadxi/deployments@v1.0.1
+        if: always()
+        with:
+          debug: true
+          step: delete-env
+          token: ${{ secrets.GH_TOKEN }}
+          env: ${{ env.BRANCH_SLUG }}
+
+  
+
+  
     
 
 
