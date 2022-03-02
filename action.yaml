@@ -11,12 +11,12 @@ inputs:
   scw_secret_key: 
     description: "secret key ( https://console.scaleway.com/project/credentials )"
     required: true
-  scw_project_id:
-    description: "Project ID"
-    required: true
+  # scw_project_id:
+  #   description: "Project ID"
+  #   required: true
   scw_containers_namespace_id:
     description: "default namespace id where your container will be deploy, if this not required, this action will create a namespace and we need projectID to be set."
-    required: false
+    required: true
   scw_registry:
     description: "From your scaleway registry ( format: rg.$REGION.scw.cloud/$NAMESPACE/$IMAGE:$TAG )"
     required: true
@@ -25,6 +25,9 @@ inputs:
     required: false
     default: "80"
   scw_dns:
+    description: "DNS name where your container will be available"
+    required: false
+  scw_dns_prefix:
     description: "DNS name where your container will be available"
     required: false
     
@@ -39,7 +42,7 @@ outputs:
   scw_container_id:
     description: "ID of your container inside your namespace"
   container_url: 
-    description: 'Url of your container deployed'
+    description: 'Url of your deployed container'
   url:
     description: "Url with dns set"
 
@@ -51,10 +54,11 @@ runs:
     - ${{ inputs.type }}
     - ${{ inputs.scw_access_key }}
     - ${{ inputs.scw_secret_key }}
-    - ${{ inputs.scw_project_id }}
+    # - ${{ inputs.scw_project_id }}
     - ${{ inputs.scw_containers_namespace_id }}
     - ${{ inputs.scw_registry }}
     - ${{ inputs.scw_container_port }}
     - ${{ inputs.scw_dns }}
+    - ${{ inputs.scw_dns_prefix }}
     # - ${{ inputs.scw_debug }}
 

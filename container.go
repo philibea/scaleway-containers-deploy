@@ -96,7 +96,7 @@ func DeleteContainer(
 
 }
 
-func GetOrCreateContainersNamespace(
+func GetContainersNamespace(
 	client *scw.Client,
 	Region scw.Region,
 ) (*container.Namespace, error) {
@@ -104,35 +104,25 @@ func GetOrCreateContainersNamespace(
 	// OPTIONAL ENV VARIABLES
 	ContainersNamespaceId := os.Getenv(EnvContainerNamespaceID)
 
-	api := container.NewAPI(client)
+	if ContainersNamespaceId == "" {
 
-	if ContainersNamespaceId != "" {
-
-		namespace, err := api.GetNamespace(&container.GetNamespaceRequest{
-			Region:      Region,
-			NamespaceID: ContainersNamespaceId,
-		})
-
-		if err != nil {
-			fmt.Println("unable to get namespace: ", err)
-		} else {
-			return namespace, nil
-		}
+		return nil, fmt.Errorf("containers namespace id not found")
 	}
 
-	Description := "Namespace created by a github action ( philibea/scaleway-action-container )"
+	api := container.NewAPI(client)
 
-	createdNamespace, err := api.CreateNamespace(&container.CreateNamespaceRequest{
-		Description: &Description,
+	namespace, err := api.GetNamespace(&container.GetNamespaceRequest{
 		Region:      Region,
+		NamespaceID: ContainersNamespaceId,
 	})
 
 	if err != nil {
-		fmt.Println("unable to create namespace: ", err)
-		return nil, err
+		fmt.Println("unable to get namespace: ", err)
+	} else {
+		return namespace, nil
 	}
 
-	return createdNamespace, nil
+	return namespace, nil
 }
 
 func isContainerAlreadyCreated(
@@ -239,6 +229,10 @@ func SetCustomDomainContainer(
 	Container *container.Container,
 	Hostname string,
 ) (*container.Domain, error) {
+
+	if Hostname == "" {
+		return nil, fmt.Errorf("hostname is required")
+	}
 
 	api := container.NewAPI(client)
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	container "github.com/scaleway/scaleway-sdk-go/api/container/v1beta1"
@@ -15,8 +16,11 @@ const (
 )
 
 const (
-	TTL  = uint32(360)
 	TYPE = "CNAME"
+)
+
+var (
+	TTL = uint32(360)
 )
 
 func WaitForDNS(
@@ -64,20 +68,28 @@ func WaitForDNS(
 
 func DeleteDNSRecord(
 	client *scw.Client,
-	DNSZone string,
 	Container *container.Container,
+	DNSZone string,
 ) (*domain.UpdateDNSZoneRecordsResponse, error) {
-	fmt.Println("Update Zone DNS")
+	fmt.Println("Update Zone DNS - Delete")
 
 	api := domain.NewAPI(client)
 
 	Data := Container.DomainName + "."
 
+	Prefix := os.Getenv(EnvDNSPrefix)
+
+	var Name string = Container.Name
+
+	if Prefix != "" {
+		Name = Prefix
+	}
+
 	IDFields := &domain.RecordIdentifier{
-		Name: Container.Name,
+		Name: Name,
 		Data: &Data,
 		Type: TYPE,
-		//TTL:  TTL,
+		TTL:  &TTL,
 	}
 
 	Changes := []*domain.RecordChange{
@@ -104,23 +116,28 @@ func DeleteDNSRecord(
 
 func AddDNSRecord(
 	client *scw.Client,
-	DNSZone string,
 	Container *container.Container,
+	DNSZone string,
+) (string, error) {
 
-) (*domain.UpdateDNSZoneRecordsResponse, error) {
-
-	fmt.Println("Update Zone DNS")
+	fmt.Println("Update Zone DNS - Add")
 
 	api := domain.NewAPI(client)
 
-	Data := Container.DomainName + "."
+	Prefix := os.Getenv(EnvDNSPrefix)
+
+	var Name string = Container.Name
+
+	if Prefix != "" {
+		Name = Prefix
+	}
 
 	Records := []*domain.Record{
 		{
-			Name: Container.Name,
+			Name: Name,
 			Type: TYPE,
 			TTL:  TTL,
-			Data: Data,
+			Data: Container.DomainName + ".",
 		},
 	}
 
@@ -132,16 +149,17 @@ func AddDNSRecord(
 		},
 	}
 
-	records, err := api.UpdateDNSZoneRecords(
+	_, err := api.UpdateDNSZoneRecords(
 		&domain.UpdateDNSZoneRecordsRequest{
 			DNSZone: DNSZone,
 			Changes: Changes,
 		})
 
 	if err != nil {
-
-		return nil, err
+		return "", err
 	}
 
-	return records, nil
+	Hostname := Name + "." + DNSZone
+
+	return Hostname, nil
 }
