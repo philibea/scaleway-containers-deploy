@@ -15,6 +15,7 @@ const (
 	EnvContainerNamespaceID = "INPUT_SCW_CONTAINERS_NAMESPACE_ID"
 	EnvContainerPort        = "INPUT_SCW_CONTAINER_PORT"
 	EnvDNS                  = "INPUT_SCW_DNS"
+	EnvDNSPrefix            = "INPUT_SCW_DNS_PREFIX"
 	EnvPathRegistry         = "INPUT_SCW_REGISTRY"
 	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
 	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
@@ -62,12 +63,10 @@ func CreateClient(Region scw.Region) (*scw.Client, error) {
 	// required to initialize the client
 	ScalewayAccessKey := os.Getenv(EnvAccessKey)
 	ScalewaySecretKey := os.Getenv(EnvSecretKey)
-	ScalewayProjectID := os.Getenv(EnvProjectID)
 
 	// Create a Scaleway client
 	client, err := scw.NewClient(
 		scw.WithAuth(ScalewayAccessKey, ScalewaySecretKey),
-		scw.WithDefaultProjectID(ScalewayProjectID),
 	)
 
 	if err != nil {
@@ -106,6 +105,7 @@ func GetContainerName(PathRegistry string) string {
 	// limitation of naming container with 20 characters
 	splitPath := strings.Split(PathRegistry, ":")
 	name = splitPath[1]
+	name = strings.ReplaceAll(name, "-", "")
 
 	if len(name) > maxLength {
 		name = name[:maxLength]
@@ -153,26 +153,28 @@ func DeployContainer(Client *scw.Client, Namespace *container.Namespace, Contain
 }
 
 func SetupDomain(Client *scw.Client, Container *container.Container) (*container.Domain, error) {
+
 	DNSName := os.Getenv(EnvDNS)
 
 	if DNSName != "" {
 
-		_, err := AddDNSRecord(Client, DNSName, Container)
+		Hostname, err := AddDNSRecord(Client, Container, DNSName)
 
 		if err != nil {
 			fmt.Println("unable to set DNS record: ", err)
 		}
 
-		Hostname := Container.Name + "." + DNSName
-
 		dns, err := WaitForDNS(Client, DNSName)
 
-		fmt.Println(dns, err)
+		if err != nil {
+			fmt.Println(dns)
+			fmt.Println("unable to wait for DNS record: ", err)
+		}
 
 		ContainerDomain, err := SetCustomDomainContainer(Client, Container, Hostname)
 
 		if err != nil {
-			fmt.Println("unable to set CutomDomain on Container: ", err)
+			fmt.Println("unable to set x on Container: ", err)
 			return nil, err
 		}
 
@@ -187,7 +189,7 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 func Deploy(Client *scw.Client, Region scw.Region, PathRegistry string) (*container.Container, *container.Domain, error) {
 
 	// Create or get a serverless container namespace
-	namespaceContainer, err := GetOrCreateContainersNamespace(Client, Region)
+	namespaceContainer, err := GetContainersNamespace(Client, Region)
 
 	WaitForNamespaceReady(Client, namespaceContainer)
 
@@ -230,7 +232,7 @@ func Teardown(Client *scw.Client, Region scw.Region, PathRegistry string) (*cont
 
 	if DNSName != "" {
 
-		_, err := DeleteDNSRecord(Client, DNSName, Container)
+		_, err := DeleteDNSRecord(Client, Container, DNSName)
 
 		if err != nil {
 			fmt.Println("unable to remove DNS record: ", err)

@@ -51,11 +51,11 @@ jobs:
           type: deploy
           scw_access_key:  ${{ secrets.ACCESS_KEY }}
           scw_secret_key: ${{ secrets.SECRET_KEY }}
-          scw_project_id: 9d1d9183-bc98-4a92-ab54-be5ef9ada957
           scw_containers_namespace_id: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
           scw_registry: rg.fr-par.scw.cloud/testong/shire-testing:latest
           scw_container_port: "80"
           scw_dns: containers.philibeaux.fr
+          scw_dns_prefix: testing-github
 
       - name: check output 
         shell: bash
@@ -101,10 +101,10 @@ jobs:
           type: teardown
           scw_access_key:  ${{ secrets.ACCESS_KEY }}
           scw_secret_key: ${{ secrets.SECRET_KEY }}
-          scw_project_id: 9d1d9183-bc98-4a92-ab54-be5ef9ada957
           scw_containers_namespace_id: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
           scw_registry: rg.fr-par.scw.cloud/testong/shire-testing:latest
           scw_dns: containers.philibeaux.fr
+          scw_dns_prefix: testing-github
 
       - name: check output 
         shell: bash
