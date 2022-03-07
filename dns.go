@@ -23,47 +23,23 @@ var (
 	TTL = uint32(360)
 )
 
-func WaitForDNS(
+func WaitForDNSZone(
 	client *scw.Client,
 	DNSZone string,
 ) (*domain.DNSZone, error) {
-	timeout := waitForDNSDefaultTimeout
-	retryInterval := defaultRetryInterval
+	fmt.Println("waiting for container to be ready")
 
-	api := domain.NewAPI(client)
+	api := container.NewAPI(client)
 
-	terminalStatus := map[domain.DNSZoneStatus]struct{}{
-		domain.DNSZoneStatusActive: {},
-		domain.DNSZoneStatusLocked: {},
-		domain.DNSZoneStatusError:  {},
-	}
-
-	dns, err := WaitSync(&WaitSyncConfig{
-		Get: func() (interface{}, bool, error) {
-			// listing dns zones and take the first one
-			DNSZones, err := api.ListDNSZones(&domain.ListDNSZonesRequest{
-				DNSZone: DNSZone,
-			})
-
-			if err != nil {
-				return nil, false, err
-			}
-
-			Dns := DNSZones.DNSZones[0]
-
-			_, isTerminal := terminalStatus[Dns.Status]
-
-			return Dns, isTerminal, nil
-		},
-		Timeout:          timeout,
-		IntervalStrategy: LinearIntervalStrategy(retryInterval),
+	dns, err := api.WaitForDNSZone(&domain.WaitForDNSRequest{
+		DNSZone: DNSZone,
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("error waiting for DNS zone to be ready: %s", err)
+		return dns, err
 	}
 
-	return dns.(*domain.DNSZone), nil
+	return dns, nil
 }
 
 func DeleteDNSRecord(
