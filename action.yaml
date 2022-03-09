@@ -1,14 +1,14 @@
 name: "scaleway-container-deploy-action"
 description: "This github action will help you to deploy automatically a container on Serverless Container"
 inputs:
-  type: 
+  type:
     description: "This input can be used for deploy or teardown your environment. type by default is deploy ( deploy | teadown )"
     required: false
     default: deploy
   scw_access_key:
     description: "Access Key ( https://console.scaleway.com/project/credentials )"
     required: true
-  scw_secret_key: 
+  scw_secret_key:
     description: "secret key ( https://console.scaleway.com/project/credentials )"
     required: true
   # scw_project_id:
@@ -30,7 +30,7 @@ inputs:
   scw_dns_prefix:
     description: "DNS name where your container will be available"
     required: false
-    
+
   # scw_debug:
   #   description: "debug log api call"
   #   required: false
@@ -38,18 +38,17 @@ inputs:
 
 outputs:
   scw_namespace_id:
-    description:  "ID of your container namespace"
+    description: "ID of your container namespace"
   scw_container_id:
     description: "ID of your container inside your namespace"
-  container_url: 
-    description: 'Url of your deployed container'
+  container_url:
+    description: "Url of your deployed container"
   url:
     description: "Url with dns set"
 
-
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "docker"
+  image: "Dockerfile"
   args:
     - ${{ inputs.type }}
     - ${{ inputs.scw_access_key }}
@@ -61,4 +60,6 @@ runs:
     - ${{ inputs.scw_dns }}
     - ${{ inputs.scw_dns_prefix }}
     # - ${{ inputs.scw_debug }}
-
+branding:
+  icon: "cloud-lightning"
+  color: "purple"
