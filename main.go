@@ -105,7 +105,9 @@ func GetContainerName(PathRegistry string) string {
 	// limitation of naming container with 20 characters
 	splitPath := strings.Split(PathRegistry, ":")
 	name = splitPath[1]
+
 	name = strings.ReplaceAll(name, "-", "")
+	name = strings.ReplaceAll(name, "_", "")
 
 	if len(name) > maxLength {
 		name = name[:maxLength]
