@@ -33,9 +33,9 @@
 You can can setup this namespace with our cli `scw containers namespace create` command.
 
 - (optional) Setup a `SCW_DNS_ZONE` within your repository `Secrets` section and set its value with your Scaleway account DNS zone.
-How To add [Custom Domains](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/).
-In this automation process, we will use the DNS zone of your Scaleway account. Each zone will be based on the container name created and based on the tag of your Image.
-Your path registry is `rg.fr-par.scw.cloud/test/images:latest`, your container name tag will be `latest` and your DNS zone will be `latest.${SCW_DNS_ZONE}`.
+  How To add [Custom Domains](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/).
+  In this automation process, we will use the DNS zone of your Scaleway account. Each zone will be based on the container name created and based on the tag of your Image.
+  Your path registry is `rg.fr-par.scw.cloud/test/images:latest`, your container name tag will be `latest` and your DNS zone will be `latest.${SCW_DNS_ZONE}`.
 
 ## 🔌 Usage
 
@@ -48,6 +48,7 @@ Your path registry is `rg.fr-par.scw.cloud/test/images:latest`, your container n
 | type               | deploy (default value )                |
 | scw_registry       | rg.fr-par.scw.cloud/test/images:latest |
 | scw_container_port | 80 (default value )                    |
+| scw_memory_limit   | 256 (default value )                   |
 
 ```bash
 on: [push]
@@ -102,11 +103,11 @@ jobs:
 
 ### dns deploy
 
-| input name                | value                                  |
-| ------------------------- | -------------------------------------- |
-| type                      | deploy                                 |
-| scw_registry              | rg.fr-par.scw.cloud/test/images:latest |
-| scw_dns                   | containers.test.fr                     |
+| input name   | value                                  |
+| ------------ | -------------------------------------- |
+| type         | deploy                                 |
+| scw_registry | rg.fr-par.scw.cloud/test/images:latest |
+| scw_dns      | containers.test.fr                     |
 
 Actually, prefix of your dns will use the default value: "name of you created container"
 This created containers will be based on the tag name of the registry.
@@ -142,7 +143,6 @@ jobs:
 | scw_dns                   | containers.test.fr                     |
 | scw_dns_prefix (optional) | testing                                |
 
-
 ```bash
 on: [push]
 
@@ -165,7 +165,6 @@ jobs:
           scw_dns: containers.test.fr
 ```
 
-
 ## 🐳 Docker
 
 If you want to use this flow outside of Github Actions, you can use the Docker Image.
@@ -179,5 +178,4 @@ docker run -it --rm \
   -e INPUT_SCW_DNS=containers.test.fr \
   -e INPUT_TYPE=deploy \
   phiphi/scaleway-containers-deploy:latest
-  ```
-
+```

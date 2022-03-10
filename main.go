@@ -19,6 +19,7 @@ const (
 	EnvPathRegistry         = "INPUT_SCW_REGISTRY"
 	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
 	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
+	EnvMemoryLimit          = "INPUT_SCW_MEMORY_LIMIT"
 )
 
 var (
@@ -27,7 +28,7 @@ var (
 	MinScale       uint32       = 1
 	MaxScale       uint32       = 5
 	MaxConcurrency uint32       = 5
-	MemoryLimit    uint32       = 1024
+	MemoryLimit    uint32       = 256
 	Timeout        scw.Duration = scw.Duration{
 		Seconds: 60,
 		Nanos:   0,

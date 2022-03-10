@@ -11,9 +11,6 @@ inputs:
   scw_secret_key:
     description: "secret key ( https://console.scaleway.com/project/credentials )"
     required: true
-  # scw_project_id:
-  #   description: "Project ID"
-  #   required: true
   scw_containers_namespace_id:
     description: "default namespace id where your container will be deploy, if this not required, this action will create a namespace and we need projectID to be set."
     required: true
@@ -24,6 +21,10 @@ inputs:
     description: "Default port where your docker container expose"
     required: false
     default: "80"
+  scw_memory_limit:
+    description: "Memory limit in MB ( 128 | 256 | 512 | 1024 | 2048 )"
+    required: false
+    default: "256"
   scw_dns:
     description: "DNS name where your container will be available"
     required: false
@@ -53,10 +54,10 @@ runs:
     - ${{ inputs.type }}
     - ${{ inputs.scw_access_key }}
     - ${{ inputs.scw_secret_key }}
-    # - ${{ inputs.scw_project_id }}
     - ${{ inputs.scw_containers_namespace_id }}
     - ${{ inputs.scw_registry }}
     - ${{ inputs.scw_container_port }}
+    - ${{ inputs.scw_memory_limit }}
     - ${{ inputs.scw_dns }}
     - ${{ inputs.scw_dns_prefix }}
     # - ${{ inputs.scw_debug }}

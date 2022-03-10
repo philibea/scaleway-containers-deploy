@@ -188,9 +188,11 @@ func CreateContainerAndDeploy(
 
 	api := container.NewAPI(client)
 
-	port, _ := strconv.ParseInt(envOr(EnvContainerPort, "80"), 10, 32)
+	port, _ := strconv.ParseInt(envOr(EnvContainerPort, fmt.Sprint(Port)), 10, 32)
+	memoryLimit, _ := strconv.ParseInt(envOr(EnvMemoryLimit, fmt.Sprint(MemoryLimit)), 10, 32)
 
 	Port := uint32(port)
+	MemoryLimit := uint32(memoryLimit)
 
 	createdContainer, err := api.CreateContainer(&container.CreateContainerRequest{
 		Description:    &Description,
