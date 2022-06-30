@@ -29,8 +29,12 @@ inputs:
     description: "DNS name where your container will be available"
     required: false
   scw_dns_prefix:
-    description: "DNS name where your container will be available"
+    description: "This will override prefix of your dns. if it's not set thane name of the containers ( max 34 char actually) will be set"
     required: false
+  root_zone:
+    description: "This will add ALIAS on your root zone. Actually CNAME is used for all `¨scw_dns_prefix.scw_dns` of your dns"
+    required: false
+    default: "false"
 
   # scw_debug:
   #   description: "debug log api call"
@@ -60,6 +64,7 @@ runs:
     - ${{ inputs.scw_memory_limit }}
     - ${{ inputs.scw_dns }}
     - ${{ inputs.scw_dns_prefix }}
+    - ${{ inputs.root_zone }}
     # - ${{ inputs.scw_debug }}
 branding:
   icon: "cloud-lightning"
