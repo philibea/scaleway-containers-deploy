@@ -93,7 +93,7 @@ func GetRegionFromRegistryPath(PathRegistry string) (scw.Region, error) {
 
 func GetContainerName(PathRegistry string) string {
 
-	const maxLength = 20
+	const maxLength = 34
 
 	var name string
 	// rg.fr-par.scw.cloud/testing/images:latest

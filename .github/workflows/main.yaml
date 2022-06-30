@@ -52,7 +52,7 @@ jobs:
           scw_access_key:  ${{ secrets.ACCESS_KEY }}
           scw_secret_key: ${{ secrets.SECRET_KEY }}
           scw_containers_namespace_id: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
-          scw_registry: rg.fr-par.scw.cloud/testong/shire-testing:latest
+          scw_registry: rg.fr-par.scw.cloud/aphilibeaux/scaleway-form:latest
           scw_container_port: "80"
           scw_dns: containers.philibeaux.fr
           scw_dns_prefix: testing-github
@@ -102,7 +102,7 @@ jobs:
           scw_access_key:  ${{ secrets.ACCESS_KEY }}
           scw_secret_key: ${{ secrets.SECRET_KEY }}
           scw_containers_namespace_id: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
-          scw_registry: rg.fr-par.scw.cloud/testong/shire-testing:latest
+          scw_registry: rg.fr-par.scw.cloud/aphilibeaux/scaleway-form:latest
           scw_dns: containers.philibeaux.fr
           scw_dns_prefix: testing-github
 
