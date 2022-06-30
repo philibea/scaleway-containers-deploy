@@ -16,7 +16,8 @@ const (
 )
 
 const (
-	TYPE = "CNAME"
+	CNAME = "CNAME"
+	ALIAS = "ALIAS"
 )
 
 var (
@@ -73,22 +74,39 @@ func DeleteDNSRecord(
 ) (*domain.UpdateDNSZoneRecordsResponse, error) {
 	fmt.Println("Update Zone DNS - Delete")
 
+	// ENV
+	Prefix := os.Getenv(EnvDNSPrefix)
+	RootZone := os.Getenv(EnvRootZone)
+
 	api := domain.NewAPI(client)
 
 	Data := Container.DomainName + "."
 
-	Prefix := os.Getenv(EnvDNSPrefix)
-
 	var Name string = Container.Name
+	var Type domain.RecordType = CNAME
+
+	// Handle Prefix DNS
 
 	if Prefix != "" {
 		Name = Prefix
+
+		fmt.Println("Update With Prefix Zone DNS - Delete", Prefix)
+	}
+
+	// Handle Root Zone Alias
+	// Some DNS doesn't handle correctly CNAME on Root Zone.
+	// We should use an Alias
+
+	if RootZone == "true" {
+		Name = ""
+		Type = ALIAS
+		fmt.Println("Update Root Zone DNS - Delete")
 	}
 
 	IDFields := &domain.RecordIdentifier{
 		Name: Name,
 		Data: &Data,
-		Type: TYPE,
+		Type: Type,
 		TTL:  &TTL,
 	}
 
@@ -120,22 +138,42 @@ func AddDNSRecord(
 	DNSZone string,
 ) (string, error) {
 
+	// ENV
+	Prefix := os.Getenv(EnvDNSPrefix)
+	RootZone := os.Getenv(EnvRootZone)
+
 	fmt.Println("Update Zone DNS - Add")
 
 	api := domain.NewAPI(client)
 
-	Prefix := os.Getenv(EnvDNSPrefix)
-
 	var Name string = Container.Name
+	var Type domain.RecordType = CNAME
+
+	// Handle Prefix DNS
 
 	if Prefix != "" {
 		Name = Prefix
+
+		fmt.Println("Update With Prefix Zone DNS - Add", Prefix)
+	}
+
+	var Hostname string = Name + "." + DNSZone
+
+	// Handle Root Zone Alias
+	// Some DNS doesn't handle correctly CNAME on Root Zone.
+	// We should use an Alias
+
+	if RootZone == "true" {
+		Name = ""
+		Type = ALIAS
+		Hostname = DNSZone
+		fmt.Println("Update Root Zone DNS - Add")
 	}
 
 	Records := []*domain.Record{
 		{
 			Name: Name,
-			Type: TYPE,
+			Type: Type,
 			TTL:  TTL,
 			Data: Container.DomainName + ".",
 		},
@@ -159,7 +197,7 @@ func AddDNSRecord(
 		return "", err
 	}
 
-	Hostname := Name + "." + DNSZone
+	fmt.Println("Hostname", Hostname)
 
 	return Hostname, nil
 }

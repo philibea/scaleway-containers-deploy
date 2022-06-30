@@ -20,6 +20,7 @@ const (
 	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
 	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
 	EnvMemoryLimit          = "INPUT_SCW_MEMORY_LIMIT"
+	EnvRootZone             = "INPUT_ROOT_ZONE"
 )
 
 var (
