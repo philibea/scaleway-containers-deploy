@@ -1,0 +1,85 @@
+stages:
+  - deploy
+
+variables:
+  GIT_STRATEGY: fetch
+  DOCKER_REGISTRY: rg.fr-par.scw.cloud
+  DOCKER_REGISTRY_SCOPE: github-action
+  DOCKER_REGISTRY_IMAGE: test
+  DOCKER_REGISTRY_USER: nologin
+  INPUT_SCW_ACCESS_KEY: ******
+  INPUT_SCW_SECRET_KEY: *****
+  INPUT_SCW_CONTAINERS_NAMESPACE_ID: ****
+  INPUT_SCW_REGISTRY: $DOCKER_REGISTRY/$DOCKER_REGISTRY_SCOPE/$DOCKER_REGISTRY_IMAGE:latest
+  INPUT_SCW_DNS: containers.philibeaux.fr
+  INPUT_TYPE: deploy
+  INPUT_ROOT_ZONE: "false"
+  INPUT_SCW_DEBUG: 1
+
+###################################################################################################
+# Deploy stage                                                                                    #
+###################################################################################################
+
+.deploy_job:
+  tags:
+    - docker
+  image: ghcr.io/philibea/scaleway-containers-deploy:v1.0.8
+  stage: deploy
+  script:
+    - START=$(date +%s)
+    - docker run -rm -it .
+
+deploy:preproduction:
+  extends:
+    - .deploy_job
+  only: ["main"]
+  environment:
+    name: preproduction
+    url: https://preproduction.containers.philibeaux.fr
+  variables:
+    INPUT_SCW_DNS: containers.philibeaux.fr
+    INPUT_SCW_DNS_PREFIX: preproduction
+    INPUT_TYPE: deploy
+    INPUT_ROOT_ZONE: "true"
+
+deploy:production:
+  extends: .deploy_job
+  only: ["/^v/"]
+  except: ["branches", "schedules"]
+  environment:
+    name: production
+    url: https://containers.philibeaux.fr
+  variables:
+    INPUT_SCW_DNS: containers.philibeaux.fr
+    INPUT_TYPE: deploy
+    INPUT_ROOT_ZONE: "true"
+
+deploy:preproduction:mr:
+  extends: .deploy_job
+  except: ["main", "tags", "schedules"]
+  environment:
+    name: preproduction
+    url: https://$CI_COMMIT_REF_SLUG.containers.philibeaux.fr
+  variables:
+    INPUT_SCW_DNS: containers.philibeaux.fr
+    INPUT_SCW_DNS_PREFIX: $CI_COMMIT_REF_SLUG
+    INPUT_TYPE: deploy
+    INPUT_ROOT_ZONE: "false"
+
+deploy:preproduction:remove-mr:
+  extends: .deploy_job
+  except: ["main", "tags", "schedules"]
+  environment:
+    name: preproduction
+    url: https://$CI_COMMIT_REF_SLUG.containers.philibeaux.fr
+    action: stop
+  variables:
+    GIT_STRATEGY: clone
+    GIT_CHECKOUT: "false"
+    GIT_DEPTH: "0"
+    INPUT_SCW_DNS: containers.philibeaux.fr
+    INPUT_SCW_DNS_PREFIX: $CI_COMMIT_REF_SLUG
+    INPUT_TYPE: teardown
+    INPUT_ROOT_ZONE: "false"
+
+  when: manual

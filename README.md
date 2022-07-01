@@ -165,6 +165,12 @@ jobs:
           scw_dns: containers.test.fr
 ```
 
+## dns deploy on root zone
+
+if you want to deploy a container on your zone, you will need to control a new boolean variable `root_zone`
+
+
+
 ## 🐳 Docker
 
 If you want to use this flow outside of Github Actions, you can use the Docker Image.
@@ -179,3 +185,12 @@ docker run -it --rm \
   -e INPUT_TYPE=deploy \
   phiphi/scaleway-containers-deploy:latest
 ```
+
+
+
+##  Gitlab
+
+If you want to use this flow outside of Github Actions, you can use the Docker Image inside you gitlab-ci configuration. You can check an exemple in this directory [here](./.gitlab-ci.yml)
+
+
+
