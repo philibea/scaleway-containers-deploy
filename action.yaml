@@ -26,7 +26,7 @@ inputs:
     required: false
     default: "256"
   scw_dns:
-    description: "DNS name where your container will be available"
+    description: "DNS name where your container will be available. Limitation: 63 char maximun"
     required: false
   scw_dns_prefix:
     description: "This will override prefix of your dns. if it's not set thane name of the containers ( max 34 char actually) will be set"

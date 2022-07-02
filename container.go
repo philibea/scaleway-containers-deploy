@@ -233,7 +233,11 @@ func SetCustomDomainContainer(
 ) (*container.Domain, error) {
 
 	if Hostname == "" {
-		return nil, fmt.Errorf("hostname is required")
+		return nil, fmt.Errorf("Hostname is required")
+	}
+
+	if len(Hostname) > 63 {
+		return nil, fmt.Errorf("Hostname cannot be longer than 63 characters")
 	}
 
 	api := container.NewAPI(client)
