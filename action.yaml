@@ -15,8 +15,12 @@ inputs:
     description: "default namespace id where your container will be deploy, if this not required, this action will create a namespace and we need projectID to be set."
     required: true
   scw_registry:
-    description: "From your scaleway registry ( format: rg.$REGION.scw.cloud/$NAMESPACE/$IMAGE:$TAG )"
+    description: "Either your Scaleway registry ( format: rg.$REGION.scw.cloud/$NAMESPACE/$IMAGE:$TAG ) or an external one ( e.g: registry.hub.docker.com/library/$IMAGE:$TAG )"
     required: true
+  scw_region:
+    description: "The Scaleway region to use"
+    required: false
+    default: "fr-par"
   scw_container_port:
     description: "Default port where your docker container expose"
     required: false

@@ -16,6 +16,7 @@ const (
 	EnvContainerPort        = "INPUT_SCW_CONTAINER_PORT"
 	EnvDNS                  = "INPUT_SCW_DNS"
 	EnvDNSPrefix            = "INPUT_SCW_DNS_PREFIX"
+	EnvRegion               = "INPUT_SCW_REGION"
 	EnvPathRegistry         = "INPUT_SCW_REGISTRY"
 	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
 	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
@@ -80,18 +81,6 @@ func CreateClient(Region scw.Region) (*scw.Client, error) {
 
 	return client, nil
 
-}
-
-func GetRegionFromRegistryPath(PathRegistry string) (scw.Region, error) {
-	region := strings.Split(PathRegistry, ".")[1]
-
-	Region, err := scw.ParseRegion(region)
-
-	if err != nil {
-		return Region, err
-	}
-
-	return Region, nil
 }
 
 func GetContainerName(PathRegistry string) string {
@@ -301,6 +290,7 @@ func getSecrets() []*container.Secret {
 
 func main() {
 	PathRegistry := os.Getenv(EnvPathRegistry)
+	MaybeRegion := envOr(EnvRegion, "fr-par")
 	Type := envOr(EnvType, "deploy")
 	EnvironmentVariables := getKeyValue(EnvEnvironmentVariables)
 	Secrets := getSecrets()
@@ -311,7 +301,7 @@ func main() {
 		return
 	}
 
-	Region, err := GetRegionFromRegistryPath(PathRegistry)
+	Region, err := scw.ParseRegion(MaybeRegion)
 
 	if err != nil {
 		fmt.Println("Registry should respact format", err)
