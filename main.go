@@ -21,8 +21,8 @@ const (
 	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
 	EnvMemoryLimit          = "INPUT_SCW_MEMORY_LIMIT"
 	EnvRootZone             = "INPUT_ROOT_ZONE"
-  EnvEnvironmentVariables = "INPUT_SCW_ENVIRONMENT_VARIABLES"
-  EnvSecrets              = "INPUT_SCW_SECRETS"
+	EnvEnvironmentVariables = "INPUT_SCW_ENVIRONMENT_VARIABLES"
+	EnvSecrets              = "INPUT_SCW_SECRETS"
 )
 
 var (
@@ -121,12 +121,12 @@ func GetContainerName(PathRegistry string) string {
 }
 
 func DeployContainer(
-  Client *scw.Client,
-  Namespace *container.Namespace,
-  ContainerName string,
-  PathRegistry string,
-  EnvironmentVariables map[string]string,
-  Secrets []*container.Secret,
+	Client *scw.Client,
+	Namespace *container.Namespace,
+	ContainerName string,
+	PathRegistry string,
+	EnvironmentVariables map[string]string,
+	Secrets []*container.Secret,
 ) (*container.Container, error) {
 
 	fmt.Println("Container Name: ", ContainerName)
@@ -200,11 +200,11 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 }
 
 func Deploy(
-  Client *scw.Client,
-  Region scw.Region,
-  PathRegistry string,
-  EnvironmentVariables map[string]string,
-  Secrets []*container.Secret,
+	Client *scw.Client,
+	Region scw.Region,
+	PathRegistry string,
+	EnvironmentVariables map[string]string,
+	Secrets []*container.Secret,
 ) (*container.Container, *container.Domain, error) {
 
 	// Create or get a serverless container namespace
@@ -270,40 +270,40 @@ func Teardown(Client *scw.Client, Region scw.Region, PathRegistry string) (*cont
 
 }
 
-func getKeyValue(key string) (map[string]string) {
-  KeyValue := make(map[string]string)
-	EnvironmentKeyValues  := strings.Split(os.Getenv(key), ",")
+func getKeyValue(key string) map[string]string {
+	KeyValue := make(map[string]string)
+	EnvironmentKeyValues := strings.Split(os.Getenv(key), ",")
 
-  for _, env := range EnvironmentKeyValues {
-    splitEnv := strings.Split(env, "=")
+	for _, env := range EnvironmentKeyValues {
+		splitEnv := strings.Split(env, "=")
 
-    if len(splitEnv) == 2 {
-      KeyValue[splitEnv[0]] = splitEnv[1]
-    }
-  }
+		if len(splitEnv) == 2 {
+			KeyValue[splitEnv[0]] = splitEnv[1]
+		}
+	}
 
-  return KeyValue
+	return KeyValue
 }
 
 func getSecrets() []*container.Secret {
-  SecretsMap := getKeyValue(EnvSecrets)
-  Secrets := make([]*container.Secret, 0)
+	SecretsMap := getKeyValue(EnvSecrets)
+	Secrets := make([]*container.Secret, 0)
 
-  for key, value := range SecretsMap {
-    Secrets = append(Secrets, &container.Secret{
-      Key: key,
-      Value: &value,
-    })
-  }
+	for key, value := range SecretsMap {
+		Secrets = append(Secrets, &container.Secret{
+			Key:   key,
+			Value: &value,
+		})
+	}
 
-  return Secrets
+	return Secrets
 }
 
 func main() {
 	PathRegistry := os.Getenv(EnvPathRegistry)
 	Type := envOr(EnvType, "deploy")
-  EnvironmentVariables := getKeyValue(EnvEnvironmentVariables)
-  Secrets := getSecrets()
+	EnvironmentVariables := getKeyValue(EnvEnvironmentVariables)
+	Secrets := getSecrets()
 
 	if PathRegistry == "" {
 		fmt.Println("Env Registry is not set")

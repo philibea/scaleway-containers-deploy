@@ -154,8 +154,8 @@ func UpdateDeployedContainer(
 	client *scw.Client,
 	Container *container.Container,
 	PathRegistry string,
-  EnvironmentVariables map[string]string,
-  Secrets []*container.Secret,
+	EnvironmentVariables map[string]string,
+	Secrets []*container.Secret,
 ) (*container.Container, error) {
 
 	api := container.NewAPI(client)
@@ -167,13 +167,13 @@ func UpdateDeployedContainer(
 	Port := uint32(port)
 
 	updatedContainer, err := api.UpdateContainer(&container.UpdateContainerRequest{
-		Region:        Container.Region,
-		ContainerID:   Container.ID,
-		RegistryImage: &PathRegistry,
-		Redeploy:      &Redeploy,
-		Port:          &Port,
-    EnvironmentVariables: &EnvironmentVariables,
-    SecretEnvironmentVariables: Secrets,
+		Region:                     Container.Region,
+		ContainerID:                Container.ID,
+		RegistryImage:              &PathRegistry,
+		Redeploy:                   &Redeploy,
+		Port:                       &Port,
+		EnvironmentVariables:       &EnvironmentVariables,
+		SecretEnvironmentVariables: Secrets,
 	})
 
 	if err != nil {
@@ -187,8 +187,8 @@ func CreateContainerAndDeploy(
 	client *scw.Client,
 	NamespaceContainer *container.Namespace,
 	PathRegistry string,
-  EnvironmentVariables map[string]string,
-  Secrets []*container.Secret,
+	EnvironmentVariables map[string]string,
+	Secrets []*container.Secret,
 	ContainerName string,
 ) (*container.Container, error) {
 
@@ -201,19 +201,19 @@ func CreateContainerAndDeploy(
 	MemoryLimit := uint32(memoryLimit)
 
 	createdContainer, err := api.CreateContainer(&container.CreateContainerRequest{
-		Description:    &Description,
-		MaxConcurrency: &MaxConcurrency,
-		MaxScale:       &MaxScale,
-		MemoryLimit:    &MemoryLimit,
-		MinScale:       &MinScale,
-		Name:           ContainerName,
-		NamespaceID:    NamespaceContainer.ID,
-		Port:           &Port,
-		Region:         NamespaceContainer.Region,
-		RegistryImage:  &PathRegistry,
-		Timeout:        &Timeout,
-    EnvironmentVariables: &EnvironmentVariables,
-    SecretEnvironmentVariables: Secrets,
+		Description:                &Description,
+		MaxConcurrency:             &MaxConcurrency,
+		MaxScale:                   &MaxScale,
+		MemoryLimit:                &MemoryLimit,
+		MinScale:                   &MinScale,
+		Name:                       ContainerName,
+		NamespaceID:                NamespaceContainer.ID,
+		Port:                       &Port,
+		Region:                     NamespaceContainer.Region,
+		RegistryImage:              &PathRegistry,
+		Timeout:                    &Timeout,
+		EnvironmentVariables:       &EnvironmentVariables,
+		SecretEnvironmentVariables: Secrets,
 	})
 
 	if err != nil {
