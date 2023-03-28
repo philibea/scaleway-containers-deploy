@@ -154,6 +154,8 @@ func UpdateDeployedContainer(
 	client *scw.Client,
 	Container *container.Container,
 	PathRegistry string,
+  EnvironmentVariables map[string]string,
+  Secrets []*container.Secret,
 ) (*container.Container, error) {
 
 	api := container.NewAPI(client)
@@ -170,6 +172,8 @@ func UpdateDeployedContainer(
 		RegistryImage: &PathRegistry,
 		Redeploy:      &Redeploy,
 		Port:          &Port,
+    EnvironmentVariables: &EnvironmentVariables,
+    SecretEnvironmentVariables: Secrets,
 	})
 
 	if err != nil {
@@ -183,6 +187,8 @@ func CreateContainerAndDeploy(
 	client *scw.Client,
 	NamespaceContainer *container.Namespace,
 	PathRegistry string,
+  EnvironmentVariables map[string]string,
+  Secrets []*container.Secret,
 	ContainerName string,
 ) (*container.Container, error) {
 
@@ -206,6 +212,8 @@ func CreateContainerAndDeploy(
 		Region:         NamespaceContainer.Region,
 		RegistryImage:  &PathRegistry,
 		Timeout:        &Timeout,
+    EnvironmentVariables: &EnvironmentVariables,
+    SecretEnvironmentVariables: Secrets,
 	})
 
 	if err != nil {

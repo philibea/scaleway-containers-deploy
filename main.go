@@ -21,6 +21,8 @@ const (
 	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
 	EnvMemoryLimit          = "INPUT_SCW_MEMORY_LIMIT"
 	EnvRootZone             = "INPUT_ROOT_ZONE"
+  EnvEnvironmentVariables = "INPUT_SCW_ENVIRONMENT_VARIABLES"
+  EnvSecrets              = "INPUT_SCW_SECRETS"
 )
 
 var (
@@ -118,7 +120,14 @@ func GetContainerName(PathRegistry string) string {
 	return name
 }
 
-func DeployContainer(Client *scw.Client, Namespace *container.Namespace, ContainerName string, PathRegistry string) (*container.Container, error) {
+func DeployContainer(
+  Client *scw.Client,
+  Namespace *container.Namespace,
+  ContainerName string,
+  PathRegistry string,
+  EnvironmentVariables map[string]string,
+  Secrets []*container.Secret,
+) (*container.Container, error) {
 
 	fmt.Println("Container Name: ", ContainerName)
 
@@ -130,7 +139,7 @@ func DeployContainer(Client *scw.Client, Namespace *container.Namespace, Contain
 
 		fmt.Println("Container already exists and will be updated", ExistingContainer)
 
-		Container, err := UpdateDeployedContainer(Client, ExistingContainer, PathRegistry)
+		Container, err := UpdateDeployedContainer(Client, ExistingContainer, PathRegistry, EnvironmentVariables, Secrets)
 
 		if err != nil {
 			fmt.Println("unable to redeploy this serverless container : ", err)
@@ -143,7 +152,7 @@ func DeployContainer(Client *scw.Client, Namespace *container.Namespace, Contain
 		return container, err
 
 	} else {
-		Container, err := CreateContainerAndDeploy(Client, Namespace, PathRegistry, ContainerName)
+		Container, err := CreateContainerAndDeploy(Client, Namespace, PathRegistry, EnvironmentVariables, Secrets, ContainerName)
 
 		if err != nil {
 			fmt.Println("unable to create or deploy a serverless container : ", err)
@@ -190,7 +199,13 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 	return nil, nil
 }
 
-func Deploy(Client *scw.Client, Region scw.Region, PathRegistry string) (*container.Container, *container.Domain, error) {
+func Deploy(
+  Client *scw.Client,
+  Region scw.Region,
+  PathRegistry string,
+  EnvironmentVariables map[string]string,
+  Secrets []*container.Secret,
+) (*container.Container, *container.Domain, error) {
 
 	// Create or get a serverless container namespace
 	namespaceContainer, err := GetContainersNamespace(Client, Region)
@@ -205,7 +220,7 @@ func Deploy(Client *scw.Client, Region scw.Region, PathRegistry string) (*contai
 
 	ContainerName := GetContainerName(PathRegistry)
 
-	Container, err := DeployContainer(Client, namespaceContainer, ContainerName, PathRegistry)
+	Container, err := DeployContainer(Client, namespaceContainer, ContainerName, PathRegistry, EnvironmentVariables, Secrets)
 
 	if err != nil {
 		fmt.Println("unable to deploy a serverless container : ", err)
@@ -255,9 +270,40 @@ func Teardown(Client *scw.Client, Region scw.Region, PathRegistry string) (*cont
 
 }
 
+func getKeyValue(key string) (map[string]string) {
+  KeyValue := make(map[string]string)
+	EnvironmentKeyValues  := strings.Split(os.Getenv(key), ",")
+
+  for _, env := range EnvironmentKeyValues {
+    splitEnv := strings.Split(env, "=")
+
+    if len(splitEnv) == 2 {
+      KeyValue[splitEnv[0]] = splitEnv[1]
+    }
+  }
+
+  return KeyValue
+}
+
+func getSecrets() []*container.Secret {
+  SecretsMap := getKeyValue(EnvSecrets)
+  Secrets := make([]*container.Secret, 0)
+
+  for key, value := range SecretsMap {
+    Secrets = append(Secrets, &container.Secret{
+      Key: key,
+      Value: &value,
+    })
+  }
+
+  return Secrets
+}
+
 func main() {
 	PathRegistry := os.Getenv(EnvPathRegistry)
 	Type := envOr(EnvType, "deploy")
+  EnvironmentVariables := getKeyValue(EnvEnvironmentVariables)
+  Secrets := getSecrets()
 
 	if PathRegistry == "" {
 		fmt.Println("Env Registry is not set")
@@ -283,7 +329,7 @@ func main() {
 	}
 
 	if Type == "deploy" {
-		Container, Domain, err := Deploy(Client, Region, PathRegistry)
+		Container, Domain, err := Deploy(Client, Region, PathRegistry, EnvironmentVariables, Secrets)
 
 		if err != nil {
 			fmt.Println("unable to deploy: ", err)
