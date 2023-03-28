@@ -101,6 +101,41 @@ jobs:
 
 ```
 
+### deploy with environment variables and secrets
+
+| input name                | value                                  |
+| ------------------------- | -------------------------------------- |
+| type                      | deploy (default value )                |
+| scw_registry              | rg.fr-par.scw.cloud/test/images:latest |
+| scw_container_port        | 80 (default value )                    |
+| scw_memory_limit          | 256 (default value )                   |
+| scw_environment_variables | HELLO=WORLD,JOHN=DOE                   |
+| scw_secrets               | HELLO=WORLD,JOHN=DOE                   |
+
+````bash
+on: [push]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy on Scaleway Containers
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Scaleway Container Deploy action
+        id: deploy
+        uses:  philibea/scaleway-containers-deploy@v1.0.5
+        with:
+          type: deploy
+          scw_access_key:  ${{ secrets.ACCESS_KEY }}
+          scw_secret_key: ${{ secrets.SECRET_KEY }}
+          scw_containers_namespace_id: ${{ secrets.CONTAINERS_NAMESPACE_ID }}
+          scw_registry: rg.fr-par.scw.cloud/test/testing:latest
+          scw_environment_variables: HELLO=WORLD,JOHN=DOE
+          scw_secrets: ${{ secrets.SECRETS }}
+
+```
+
 ### dns deploy
 
 | input name   | value                                  |
@@ -132,7 +167,7 @@ jobs:
           scw_containers_namespace_id: ${{ secrets.CONTAINERS_NAMESPACE_ID }}
           scw_registry: rg.fr-par.scw.cloud/test/testing:latest
           scw_dns: containers.test.fr
-```
+````
 
 ### dns teardown
 
@@ -169,8 +204,6 @@ jobs:
 
 if you want to deploy a container on your zone, you will need to control a new boolean variable `root_zone`
 
-
-
 ## 🐳 Docker
 
 If you want to use this flow outside of Github Actions, you can use the Docker Image.
@@ -186,11 +219,6 @@ docker run -it --rm \
   phiphi/scaleway-containers-deploy:latest
 ```
 
-
-
-##  Gitlab
+## Gitlab
 
 If you want to use this flow outside of Github Actions, you can use the Docker Image inside you gitlab-ci configuration. You can check an exemple in this directory [here](./.gitlab-ci.yml)
-
-
-
