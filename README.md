@@ -104,6 +104,8 @@ jobs:
 
 ### deploy with environment variables and secrets
 
+> **Note**: The environment variables/secrets values can't contains commas nor equal signs.
+
 | input name                | value                                  |
 | ------------------------- | -------------------------------------- |
 | type                      | deploy (default value )                |
@@ -114,7 +116,7 @@ jobs:
 | scw_environment_variables | HELLO=WORLD,JOHN=DOE                   |
 | scw_secrets               | HELLO=WORLD,JOHN=DOE                   |
 
-`````bash
+```bash
 on: [push]
 
 jobs:
@@ -148,7 +150,7 @@ jobs:
 | scw_container_port        | 80 (default value )                          |
 | scw_memory_limit          | 256 (default value )                         |
 
-````bash
+```bash
 on: [push]
 
 jobs:

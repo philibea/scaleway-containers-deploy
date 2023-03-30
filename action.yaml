@@ -44,7 +44,11 @@ inputs:
     required: false
     default: ""
   scw_secrets:
-    description: "List of secrets in the form of KEY=VALUE, separated by commas"
+    description: "List of environnment variables in the form of KEY=VALUE, separated by commas. The value can't contains commas nor equal signs"
+    required: false
+    default: ""
+  scw_secrets:
+    description: "List of secrets in the form of KEY=VALUE, separated by commas. The value can't contains commas nor equal signs"
     required: false
     default: ""
 
