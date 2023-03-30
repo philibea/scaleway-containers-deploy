@@ -166,7 +166,7 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 			fmt.Println("unable to set DNS record: ", err)
 		}
 
-		dns, err := WaitForDNS(Client, DNSName)
+		dns, err := WaitForDNSReady(Client, DNSName)
 
 		if err != nil {
 			fmt.Println(dns)
