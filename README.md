@@ -103,6 +103,8 @@ jobs:
 
 ### deploy with environment variables and secrets
 
+> **Note**: The environment variables/secrets values can't contains commas nor equal signs.
+
 | input name                | value                                  |
 | ------------------------- | -------------------------------------- |
 | type                      | deploy (default value )                |
@@ -112,7 +114,7 @@ jobs:
 | scw_environment_variables | HELLO=WORLD,JOHN=DOE                   |
 | scw_secrets               | HELLO=WORLD,JOHN=DOE                   |
 
-````bash
+```bash
 on: [push]
 
 jobs:
@@ -167,7 +169,7 @@ jobs:
           scw_containers_namespace_id: ${{ secrets.CONTAINERS_NAMESPACE_ID }}
           scw_registry: rg.fr-par.scw.cloud/test/testing:latest
           scw_dns: containers.test.fr
-````
+```
 
 ### dns teardown
 
