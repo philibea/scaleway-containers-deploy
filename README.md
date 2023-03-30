@@ -47,6 +47,7 @@ You can can setup this namespace with our cli `scw containers namespace create` 
 | ------------------ | -------------------------------------- |
 | type               | deploy (default value )                |
 | scw_registry       | rg.fr-par.scw.cloud/test/images:latest |
+| scw_region         | fr-par (default value)                 |
 | scw_container_port | 80 (default value )                    |
 | scw_memory_limit   | 256 (default value )                   |
 
@@ -109,6 +110,7 @@ jobs:
 | ------------------------- | -------------------------------------- |
 | type                      | deploy (default value )                |
 | scw_registry              | rg.fr-par.scw.cloud/test/images:latest |
+| scw_region                | fr-par (default value)                 |
 | scw_container_port        | 80 (default value )                    |
 | scw_memory_limit          | 256 (default value )                   |
 | scw_environment_variables | HELLO=WORLD,JOHN=DOE                   |
@@ -135,6 +137,39 @@ jobs:
           scw_registry: rg.fr-par.scw.cloud/test/testing:latest
           scw_environment_variables: HELLO=WORLD,JOHN=DOE
           scw_secrets: ${{ secrets.SECRETS }}
+
+```
+
+### deploy to another region using an external registry
+
+| input name                | value                                        |
+| ------------------------- | -------------------------------------------- |
+| type                      | deploy (default value       )                |
+| scw_registry              | registry.hub.docker.com/library/nginx:latest |
+| scw_region                | nl-ams                                       |
+| scw_container_port        | 80 (default value )                          |
+| scw_memory_limit          | 256 (default value )                         |
+
+```bash
+on: [push]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy on Scaleway Containers
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Scaleway Container Deploy action
+        id: deploy
+        uses:  philibea/scaleway-containers-deploy@v1.0.5
+        with:
+          type: deploy
+          scw_access_key:  ${{ secrets.ACCESS_KEY }}
+          scw_secret_key: ${{ secrets.SECRET_KEY }}
+          scw_containers_namespace_id: ${{ secrets.CONTAINERS_NAMESPACE_ID }}
+          scw_registry: registry.hub.docker.com/library/nginx:latest
+          scw_region: nl-ams
 
 ```
 
@@ -169,7 +204,7 @@ jobs:
           scw_containers_namespace_id: ${{ secrets.CONTAINERS_NAMESPACE_ID }}
           scw_registry: rg.fr-par.scw.cloud/test/testing:latest
           scw_dns: containers.test.fr
-```
+`````
 
 ### dns teardown
 
