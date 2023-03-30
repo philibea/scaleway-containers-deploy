@@ -35,6 +35,14 @@ inputs:
     description: "This will add ALIAS on your root zone. Actually CNAME is used for all `¨scw_dns_prefix.scw_dns` of your dns"
     required: false
     default: "false"
+  scw_environment_variables:
+    description: "List of environnment variables in the form of KEY=VALUE, separated by commas. The value can't contains commas nor equal signs"
+    required: false
+    default: ""
+  scw_secrets:
+    description: "List of secrets in the form of KEY=VALUE, separated by commas. The value can't contains commas nor equal signs"
+    required: false
+    default: ""
 
   # scw_debug:
   #   description: "debug log api call"
