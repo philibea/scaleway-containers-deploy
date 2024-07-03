@@ -199,7 +199,7 @@ func CreateContainerAndDeploy(
 	minScale, _ := strconv.ParseInt(envOr(EnvMinScale, fmt.Sprint(MinScale)), 10, 32)
 	maxScale, _ := strconv.ParseInt(envOr(EnvMaxScale, fmt.Sprint(MaxScale)), 10, 32)
 	maxConcurrency, _ := strconv.ParseInt(envOr(EnvMaxConcurrency, fmt.Sprint(MaxConcurrency)), 10, 32)
-	cpuLimit, _ := strconv.ParseInt(envOr(EnvMaxConcurrency, fmt.Sprint(MaxConcurrency)), 10, 32)
+	cpuLimit, _ := strconv.ParseInt(envOr(EnvCPULimit, fmt.Sprint(CPULimit)), 10, 32)
 
 	Port := uint32(port)
 	MemoryLimit := uint32(memoryLimit)
