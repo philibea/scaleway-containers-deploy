@@ -37,6 +37,14 @@ inputs:
     description: "Max Scale of the Container"
     required: false
     default: "5"
+  scw_cpu_limit:
+    description: "CPU Limit of the Container"
+    required: false
+    default: "70"
+  scw_max_concurrency:
+    description: "Max Concurrency of the Container"
+    required: false
+    default: "5"
   scw_dns:
     description: "DNS name where your container will be available. Limitation: 63 char maximun"
     required: false
@@ -84,6 +92,8 @@ runs:
     - ${{ inputs.scw_memory_limit }}
     - ${{ inputs.scw_min_scale }}
     - ${{ inputs.scw_max_scale }}
+    - ${{ inputs.scw_cpu_limit }}
+    - ${{ inputs.scw_max_concurrency }}
     - ${{ inputs.scw_dns }}
     - ${{ inputs.scw_dns_prefix }}
     - ${{ inputs.root_zone }}

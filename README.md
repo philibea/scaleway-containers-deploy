@@ -43,15 +43,18 @@ You can can setup this namespace with our cli `scw containers namespace create` 
 
 ### simple deploy
 
-| input name         | value                                  |
-| ------------------ | -------------------------------------- |
-| type               | deploy (default value )                |
-| scw_registry       | rg.fr-par.scw.cloud/test/images:latest |
-| scw_region         | fr-par (default value)                 |
-| scw_container_port | 80 (default value )                    |
-| scw_memory_limit   | 256 (default value )                   |
-| scw_min_scale      | 1   (default value )                   |
-| scw_max_scale      | 5   (default value )                   |
+| input name           | value                                  |
+| -------------------- | -------------------------------------- |
+| type                 | deploy (default value )                |
+| scw_registry         | rg.fr-par.scw.cloud/test/images:latest |
+| scw_region           | fr-par (default value)                 |
+| scw_container_port   | 80 (default value )                    |
+| scw_memory_limit     | 256 (default value )                   |
+| scw_cpu_limit        | 256 (default value )                   |
+| scw_min_scale        | 1   (default value )                   |
+| scw_max_scale        | 5   (default value )                   |
+| scw_max_concurrency  | 5   (default value )                   |
+| scw_cpu_limit        | 70  (default value )                   |
 
 ```bash
 on: [push]

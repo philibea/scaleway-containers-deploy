@@ -15,7 +15,7 @@ const (
 	EnvContainerNamespaceID = "INPUT_SCW_CONTAINERS_NAMESPACE_ID"
 	EnvContainerPort        = "INPUT_SCW_CONTAINER_PORT"
 	EnvDNS                  = "INPUT_SCW_DNS"
-	EnvDNSPrefix             = "INPUT_SCW_DNS_PREFIX"
+	EnvDNSPrefix            = "INPUT_SCW_DNS_PREFIX"
 	EnvRegion               = "INPUT_SCW_REGION"
 	EnvPathRegistry         = "INPUT_SCW_REGISTRY"
 	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
@@ -23,6 +23,8 @@ const (
 	EnvMemoryLimit          = "INPUT_SCW_MEMORY_LIMIT"
 	EnvMinScale             = "INPUT_SCW_MIN_SCALE"
 	EnvMaxScale             = "INPUT_SCW_MAX_SCALE"
+	EnvMaxConcurrency       = "INPUT_SCW_MAX_CONCURRENCY"
+	EnvCPULimit             = "INPUT_SCW_CPU_LIMIT"
 	EnvRootZone             = "INPUT_ROOT_ZONE"
 	EnvEnvironmentVariables = "INPUT_SCW_ENVIRONMENT_VARIABLES"
 	EnvSecrets              = "INPUT_SCW_SECRETS"
@@ -35,6 +37,7 @@ var (
 	MaxScale       uint32       = 5
 	MaxConcurrency uint32       = 5
 	MemoryLimit    uint32       = 256
+	CPULimit       uint32       = 70
 	Timeout        scw.Duration = scw.Duration{
 		Seconds: 60,
 		Nanos:   0,

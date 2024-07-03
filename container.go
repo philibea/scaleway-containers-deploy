@@ -197,12 +197,16 @@ func CreateContainerAndDeploy(
 	port, _ := strconv.ParseInt(envOr(EnvContainerPort, fmt.Sprint(Port)), 10, 32)
 	memoryLimit, _ := strconv.ParseInt(envOr(EnvMemoryLimit, fmt.Sprint(MemoryLimit)), 10, 32)
 	minScale, _ := strconv.ParseInt(envOr(EnvMinScale, fmt.Sprint(MinScale)), 10, 32)
-	maxScale, _ := strconv.ParseInt(envOr(EnvMinScale, fmt.Sprint(MinScale)), 10, 32)
+	maxScale, _ := strconv.ParseInt(envOr(EnvMaxScale, fmt.Sprint(MaxScale)), 10, 32)
+	maxConcurrency, _ := strconv.ParseInt(envOr(EnvMaxConcurrency, fmt.Sprint(MaxConcurrency)), 10, 32)
+	cpuLimit, _ := strconv.ParseInt(envOr(EnvMaxConcurrency, fmt.Sprint(MaxConcurrency)), 10, 32)
 
 	Port := uint32(port)
 	MemoryLimit := uint32(memoryLimit)
 	MinScale := uint32(minScale)
 	MaxScale := uint32(maxScale)
+	MaxConcurrency := uint32(maxConcurrency)
+	CPULimit := uint32(cpuLimit)
 
 	createdContainer, err := api.CreateContainer(&container.CreateContainerRequest{
 		Description:                &Description,
@@ -210,6 +214,7 @@ func CreateContainerAndDeploy(
 		MemoryLimit:                &MemoryLimit,
 		MinScale:                   &MinScale,
 		MaxScale:                   &MaxScale,
+		CPULimit:                   &CPULimit,
 		Name:                       ContainerName,
 		NamespaceID:                NamespaceContainer.ID,
 		Port:                       &Port,
