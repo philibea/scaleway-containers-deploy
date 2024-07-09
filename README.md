@@ -50,11 +50,11 @@ You can can setup this namespace with our cli `scw containers namespace create` 
 | scw_region           | fr-par (default value)                 |
 | scw_container_port   | 80 (default value )                    |
 | scw_memory_limit     | 256 (default value )                   |
-| scw_cpu_limit        | 256 (default value )                   |
 | scw_min_scale        | 1   (default value )                   |
 | scw_max_scale        | 5   (default value )                   |
 | scw_max_concurrency  | 5   (default value )                   |
 | scw_cpu_limit        | 70  (default value )                   |
+| scw_sandbox          | v1                                     |
 
 ```bash
 on: [push]

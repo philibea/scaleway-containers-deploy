@@ -183,6 +183,21 @@ func UpdateDeployedContainer(
 	return updatedContainer, nil
 }
 
+func GetSandboxVersion()container.ContainerSandbox {
+
+	sandbox :=  envOr(EnvSandbox, Sandbox.String())
+
+	if(sandbox == "v1"){
+		return container.ContainerSandboxV1
+	}
+
+	if(sandbox == "v2"){
+		return container.ContainerSandboxV2
+	}
+
+	return container.ContainerSandboxUnknownSandbox
+
+}
 func CreateContainerAndDeploy(
 	client *scw.Client,
 	NamespaceContainer *container.Namespace,
@@ -207,6 +222,8 @@ func CreateContainerAndDeploy(
 	MaxScale := uint32(maxScale)
 	MaxConcurrency := uint32(maxConcurrency)
 	CPULimit := uint32(cpuLimit)
+	Sandbox := GetSandboxVersion()
+
 
 	createdContainer, err := api.CreateContainer(&container.CreateContainerRequest{
 		Description:                &Description,
@@ -223,6 +240,7 @@ func CreateContainerAndDeploy(
 		Timeout:                    &Timeout,
 		EnvironmentVariables:       &EnvironmentVariables,
 		SecretEnvironmentVariables: Secrets,
+		Sandbox:  					Sandbox,
 	})
 
 	if err != nil {
