@@ -113,7 +113,7 @@ jobs:
         if: always()
         with:
           step: finish
-          env: ${{ env.DEPLOYMENT_NAME }}
+          env: ${{ env.BRANCH_SLUG }}
           token: ${{ env.GH_TOKEN }}
           auto_inactive: true
           # This will now be automatically handled by github with the auto_inactive
