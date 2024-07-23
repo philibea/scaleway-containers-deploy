@@ -9,6 +9,59 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
+func getSecrets() []*container.Secret {
+	SecretsMap := getKeyValue(EnvSecrets)
+	Secrets := make([]*container.Secret, 0)
+
+	for key, value := range SecretsMap {
+		Secrets = append(Secrets, &container.Secret{
+			Key:   key,
+			Value: &value,
+		})
+	}
+
+	return Secrets
+}
+
+func GetSandboxVersion() container.ContainerSandbox {
+
+	sandbox := envOr(EnvSandbox, Sandbox.String())
+
+	if sandbox == "v1" {
+		return container.ContainerSandboxV1
+	}
+
+	if sandbox == "v2" {
+		return container.ContainerSandboxV2
+	}
+
+	return container.ContainerSandboxUnknownSandbox
+}
+
+
+func getContainerEnvVariables() container.Container {
+
+	port, _ := strconv.ParseInt(envOr(EnvContainerPort, fmt.Sprint(Port)), 10, 32)
+	memoryLimit, _ := strconv.ParseInt(envOr(EnvMemoryLimit, fmt.Sprint(MemoryLimit)), 10, 32)
+	minScale, _ := strconv.ParseInt(envOr(EnvMinScale, fmt.Sprint(MinScale)), 10, 32)
+	maxScale, _ := strconv.ParseInt(envOr(EnvMaxScale, fmt.Sprint(MaxScale)), 10, 32)
+	maxConcurrency, _ := strconv.ParseInt(envOr(EnvMaxConcurrency, fmt.Sprint(MaxConcurrency)), 10, 32)
+	cpuLimit, _ := strconv.ParseInt(envOr(EnvCPULimit, fmt.Sprint(CPULimit)), 10, 32)
+
+	Env := container.Container{
+		Port:           uint32(port),
+		MemoryLimit:    uint32(memoryLimit),
+		MinScale:       uint32(minScale),
+		MaxScale:       uint32(maxScale),
+		MaxConcurrency: uint32(maxConcurrency),
+		CPULimit:       uint32(cpuLimit),
+		Sandbox:        GetSandboxVersion(),
+	}
+
+	return Env
+
+}
+
 func WaitForNamespaceReady(client *scw.Client, NamespaceContainer *container.Namespace) (*container.Namespace, error) {
 	fmt.Println("waiting for namespace to be ready")
 
@@ -154,26 +207,30 @@ func UpdateDeployedContainer(
 	client *scw.Client,
 	Container *container.Container,
 	PathRegistry string,
-	EnvironmentVariables map[string]string,
-	Secrets []*container.Secret,
 ) (*container.Container, error) {
 
 	api := container.NewAPI(client)
 
 	Redeploy := true
 
-	port, _ := strconv.ParseInt(envOr(EnvContainerPort, "80"), 10, 32)
-
-	Port := uint32(port)
+	containerEnv := getContainerEnvVariables()
+	Secrets := getSecrets()
+    EnvironmentVariables := getKeyValue(EnvEnvironmentVariables)
 
 	updatedContainer, err := api.UpdateContainer(&container.UpdateContainerRequest{
 		Region:                     Container.Region,
 		ContainerID:                Container.ID,
 		RegistryImage:              &PathRegistry,
 		Redeploy:                   &Redeploy,
-		Port:                       &Port,
 		EnvironmentVariables:       &EnvironmentVariables,
 		SecretEnvironmentVariables: Secrets,
+		MemoryLimit:                &containerEnv.MemoryLimit,
+		MinScale:                   &containerEnv.MinScale,
+		MaxScale:                   &containerEnv.MaxScale,
+		CPULimit:                   &containerEnv.CPULimit,
+		Port:                       &containerEnv.Port,
+		MaxConcurrency:             &containerEnv.MaxConcurrency,
+		Sandbox:                    containerEnv.Sandbox,
 	})
 
 	if err != nil {
@@ -183,64 +240,36 @@ func UpdateDeployedContainer(
 	return updatedContainer, nil
 }
 
-func GetSandboxVersion()container.ContainerSandbox {
-
-	sandbox :=  envOr(EnvSandbox, Sandbox.String())
-
-	if(sandbox == "v1"){
-		return container.ContainerSandboxV1
-	}
-
-	if(sandbox == "v2"){
-		return container.ContainerSandboxV2
-	}
-
-	return container.ContainerSandboxUnknownSandbox
-
-}
 func CreateContainerAndDeploy(
 	client *scw.Client,
 	NamespaceContainer *container.Namespace,
 	PathRegistry string,
-	EnvironmentVariables map[string]string,
-	Secrets []*container.Secret,
 	ContainerName string,
 ) (*container.Container, error) {
 
 	api := container.NewAPI(client)
 
-	port, _ := strconv.ParseInt(envOr(EnvContainerPort, fmt.Sprint(Port)), 10, 32)
-	memoryLimit, _ := strconv.ParseInt(envOr(EnvMemoryLimit, fmt.Sprint(MemoryLimit)), 10, 32)
-	minScale, _ := strconv.ParseInt(envOr(EnvMinScale, fmt.Sprint(MinScale)), 10, 32)
-	maxScale, _ := strconv.ParseInt(envOr(EnvMaxScale, fmt.Sprint(MaxScale)), 10, 32)
-	maxConcurrency, _ := strconv.ParseInt(envOr(EnvMaxConcurrency, fmt.Sprint(MaxConcurrency)), 10, 32)
-	cpuLimit, _ := strconv.ParseInt(envOr(EnvCPULimit, fmt.Sprint(CPULimit)), 10, 32)
-
-	Port := uint32(port)
-	MemoryLimit := uint32(memoryLimit)
-	MinScale := uint32(minScale)
-	MaxScale := uint32(maxScale)
-	MaxConcurrency := uint32(maxConcurrency)
-	CPULimit := uint32(cpuLimit)
-	Sandbox := GetSandboxVersion()
+	containerEnv := getContainerEnvVariables()
+	Secrets := getSecrets()
+	EnvironmentVariables := getKeyValue(EnvEnvironmentVariables)
 
 
 	createdContainer, err := api.CreateContainer(&container.CreateContainerRequest{
 		Description:                &Description,
-		MaxConcurrency:             &MaxConcurrency,
-		MemoryLimit:                &MemoryLimit,
-		MinScale:                   &MinScale,
-		MaxScale:                   &MaxScale,
-		CPULimit:                   &CPULimit,
 		Name:                       ContainerName,
 		NamespaceID:                NamespaceContainer.ID,
-		Port:                       &Port,
 		Region:                     NamespaceContainer.Region,
 		RegistryImage:              &PathRegistry,
 		Timeout:                    &Timeout,
 		EnvironmentVariables:       &EnvironmentVariables,
 		SecretEnvironmentVariables: Secrets,
-		Sandbox:  					Sandbox,
+		MemoryLimit:                &containerEnv.MemoryLimit,
+		MinScale:                   &containerEnv.MinScale,
+		MaxScale:                   &containerEnv.MaxScale,
+		CPULimit:                   &containerEnv.CPULimit,
+		Port:                       &containerEnv.Port,
+		MaxConcurrency:             &containerEnv.MaxConcurrency,
+		Sandbox:                    containerEnv.Sandbox,
 	})
 
 	if err != nil {

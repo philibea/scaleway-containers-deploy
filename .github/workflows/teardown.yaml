@@ -1,0 +1,63 @@
+# only serve a purpose to live test
+name: Teardown
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_call:
+    # Map the workflow outputs to job outputs
+    outputs:
+        container_id:
+            description: "ID of your container inside your namespace"
+            value: ${{ jobs.deploy.outputs.scw_container_id }}
+        namespace_id:
+            description: "ID of your container namespace"
+            value: ${{ jobs.deploy.outputs.scw_namespace_id }}
+
+jobs:
+    teardown:
+        runs-on: ubuntu-22.04
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            IMAGE_NAME:  rg.fr-par.scw.cloud/aphilibeaux/scaleway-form
+            DEPLOYMENT_NAME: container
+            # SCW_DNS: ${{ github.ref_name == 'main' && 'containers.philibeaux.fr'|| '' }}
+            SCW_DNS: containers.philibeaux.fr
+            CONTAINER_NAMESPACE_ID: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
+
+        steps:
+        - uses: actions/checkout@v4 # v4.1.4
+        - name: Inject slug/short variables
+          uses: rlespinasse/github-slug-action@v4
+
+        - name: Export custom variables
+          run: |
+            SAFE_HEAD_REF=$(echo $GITHUB_HEAD_REF_DEPLOYMENT_NAME | rev | cut -c-37 | rev | sed 's/^-//g')
+            echo "BRANCH_SLUG=$SAFE_HEAD_REF" >> $GITHUB_ENV
+        - name: Set DNS Prefix
+          run: |
+            if [[ "${{ env.BRANCH_SLUG }}" == "main" ]]; then
+                echo "SCW_DNS_PREFIX=''" >> $GITHUB_ENV
+            else
+                echo "SCW_DNS_PREFIX=${{ env.BRANCH_SLUG }}" >> $GITHUB_ENV
+            fi
+
+        - name: Deploy Serverless Container Scaleway
+          uses: ./
+          id: deploy
+          with:
+            type: "teardown"
+            scw_dns: ${{ env.SCW_DNS }}
+            root_zone: ${{ env.BRANCH_SLUG == 'main' }}
+            scw_dns_prefix: ${{ env.SCW_DNS_PREFIX }}
+            scw_access_key: ${{ secrets.SCW_ACCESS_KEY }}
+            scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
+            scw_containers_namespace_id: ${{ env.CONTAINER_NAMESPACE_ID }}
+            scw_registry: rg.fr-par.scw.cloud/aphilibeaux/scaleway-form:latest
+
+        - name: Remove deployment
+          uses: bobheadxi/deployments@v1.5.0
+          with:
+            step: deactivate-env
+            token: ${{ env.GITHUB_TOKEN }}
+            env: ${{ env.BRANCH_SLUG }}

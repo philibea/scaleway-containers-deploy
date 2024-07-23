@@ -106,7 +106,7 @@ func DeleteDNSRecord(
 	return records, nil
 }
 
-func AddDNSRecord(
+func SetDNSRecord(
 	client *scw.Client,
 	Container *container.Container,
 	DNSZone string,
@@ -153,9 +153,19 @@ func AddDNSRecord(
 		},
 	}
 
+	Data :=  Container.DomainName + "."
+
+	IDFields := &domain.RecordIdentifier{
+		Name: Name,
+		Type: Type,
+		TTL:  &TTL,
+		Data: &Data,
+	}
+
 	Changes := []*domain.RecordChange{
 		{
-			Add: &domain.RecordChangeAdd{
+			Set: &domain.RecordChangeSet{
+				IDFields: IDFields,
 				Records: Records,
 			},
 		},
@@ -173,5 +183,5 @@ func AddDNSRecord(
 
 	fmt.Println("Hostname", Hostname)
 
-	return Hostname, nil
+	return Hostname,nil
 }
