@@ -1,0 +1,124 @@
+name: Deploy
+
+on:
+  pull_request:
+    types: ["opened", "edited", "reopened", "synchronize"]
+  push:
+    branches:
+      - main
+  workflow_call:
+    # Map the workflow outputs to job outputs
+    outputs:
+        container_id:
+            description: "ID of your container inside your namespace"
+            value: ${{ jobs.deploy.outputs.scw_container_id }}
+        namespace_id:
+            description: "ID of your container namespace"
+            value: ${{ jobs.deploy.outputs.scw_namespace_id }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: deploy scaleway serverless container
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DEPLOYMENT_NAME: "container"
+    #   SCW_DNS: ${{ github.ref_name == 'main' && 'containers.philibeaux.fr' || '' }}
+      SCW_DNS: containers.philibeaux.fr
+      CONTAINER_NAMESPACE_ID: ae28eaf1-3b94-4660-bce0-9b0e0a5d1062
+    steps:
+      - name: Start deployment
+        uses: bobheadxi/deployments@v1.5.0
+        id: deployment
+        with:
+          step: start
+          token: ${{ env.GH_TOKEN }}
+          env: ${{ env.DEPLOYMENT_NAME }}
+          ref: ${{ github.head_ref }}
+      - uses: actions/checkout@v4
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v4
+      - name: Export custom variables
+        run: |
+          SAFE_GITHUB_HEAD_REF_SLUG_URL=$(echo $GITHUB_HEAD_REF_SLUG_URL-$DEPLOYMENT_NAME | rev | cut -c-37 | rev)
+          ([[ $GITHUB_REF == 'refs/heads/main' ]] && echo "BRANCH_SLUG=main" || echo "BRANCH_SLUG=$SAFE_GITHUB_HEAD_REF_SLUG_URL") >> $GITHUB_ENV
+
+      - name: Set scw_max_concurrency
+        id: set-max-concurrency
+        run: |
+          if [[ "${{ env.BRANCH_SLUG }}" == "main" ]]; then
+            echo "SCW_MAX_CONCURRENCY=5" >> $GITHUB_ENV
+          else
+            echo "SCW_MAX_CONCURRENCY=1" >> $GITHUB_ENV
+          fi
+
+      - name: Set scw_min_scale
+        id: set-min-scale
+        run: |
+          if [[ "${{ env.BRANCH_SLUG }}" == "main" ]]; then
+            echo "SCW_MIN_SCALE=1" >> $GITHUB_ENV
+          else
+            echo "SCW_MIN_SCALE=0" >> $GITHUB_ENV
+          fi
+
+      - name: Set scw_limit
+        id: set-cpu-limit
+        run: |
+          if [[ "${{ env.BRANCH_SLUG }}" == "main" ]]; then
+            echo "SCW_CPU_LIMIT=1120" >> $GITHUB_ENV
+            echo "SCW_MEMORY_LIMIT=1024" >> $GITHUB_ENV
+          else
+            echo "SCW_CPU_LIMIT=140" >> $GITHUB_ENV
+            echo "SCW_MEMORY_LIMIT=256" >> $GITHUB_ENV
+          fi
+
+      - name: Set DNS Prefix
+        run: |
+          if [[ "${{ env.BRANCH_SLUG }}" == "main" ]]; then
+            echo "SCW_DNS_PREFIX=''" >> $GITHUB_ENV
+          else
+            echo "SCW_DNS_PREFIX=${{ env.BRANCH_SLUG }}" >> $GITHUB_ENV
+          fi
+    
+      - name: Deploy Serverless Container Scaleway
+        uses: ./
+        id: deploy
+        with:
+          type: "deploy"
+          scw_registry: rg.fr-par.scw.cloud/aphilibeaux/scaleway-form:latest
+          scw_dns: ${{ env.SCW_DNS }}
+          scw_dns_prefix: ${{ env.SCW_DNS_PREFIX }}
+          root_zone: ${{ env.BRANCH_SLUG == 'main' }}
+          scw_access_key: ${{ secrets.SCW_ACCESS_KEY }}
+          scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
+          scw_containers_namespace_id: ${{ env.CONTAINER_NAMESPACE_ID }}
+          scw_environment_variables: "GITHUB=DEPLOY"
+          scw_secrets: "GITHUB=DEPLOY"
+          scw_min_scale: ${{ env.SCW_MIN_SCALE }}
+          scw_cpu_limit: ${{ env.SCW_CPU_LIMIT }}
+          scw_max_concurrency: ${{ env.SCW_MAX_CONCURRENCY }}
+          scw_sandbox: "v2"
+          scw_memory_limit: ${{ env.SCW_MEMORY_LIMIT }}
+
+      - name: check output
+        shell: bash
+        run: |
+          echo "${{ steps.deploy.outputs.url }}"
+          echo "${{ steps.deploy.outputs.container_url }}"
+          echo "${{ steps.deploy.outputs.scw_container_id }}"
+          echo "${{ steps.deploy.outputs.scw_namespace_id }}"
+
+      - name: Update deployment status
+        uses: bobheadxi/deployments@v1.5.0
+        if: always()
+        with:
+          step: finish
+          env: ${{ env.DEPLOYMENT_NAME }}
+          token: ${{ env.GH_TOKEN }}
+          auto_inactive: true
+          # This will now be automatically handled by github with the auto_inactive
+          override: false
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          env_url: ${{ steps.deploy.outputs.url }}
+

@@ -10,25 +10,25 @@ import (
 )
 
 const (
-	EnvType                 	= "INPUT_TYPE"
-	EnvAccessKey            	= "INPUT_SCW_ACCESS_KEY"
-	EnvContainerNamespaceID 	= "INPUT_SCW_CONTAINERS_NAMESPACE_ID"
-	EnvContainerPort        	= "INPUT_SCW_CONTAINER_PORT"
-	EnvDNS                  	= "INPUT_SCW_DNS"
-	EnvDNSPrefix            	 = "INPUT_SCW_DNS_PREFIX"
-	EnvRegion               	= "INPUT_SCW_REGION"
-	EnvPathRegistry         	= "INPUT_SCW_REGISTRY"
-	EnvProjectID            	= "INPUT_SCW_PROJECT_ID"
-	EnvSecretKey            	= "INPUT_SCW_SECRET_KEY"
-	EnvMemoryLimit          	= "INPUT_SCW_MEMORY_LIMIT"
-	EnvMinScale             	= "INPUT_SCW_MIN_SCALE"
-	EnvMaxScale             	= "INPUT_SCW_MAX_SCALE"
-	EnvMaxConcurrency       	= "INPUT_SCW_MAX_CONCURRENCY"
-	EnvCPULimit             	= "INPUT_SCW_CPU_LIMIT"
-	EnvSandbox              	= "INPUT_SCW_SANDBOX"
-	EnvRootZone             	= "INPUT_ROOT_ZONE"
-	EnvEnvironmentVariables 	= "INPUT_SCW_ENVIRONMENT_VARIABLES"
-	EnvSecrets              	= "INPUT_SCW_SECRETS"
+	EnvType                 = "INPUT_TYPE"
+	EnvAccessKey            = "INPUT_SCW_ACCESS_KEY"
+	EnvContainerNamespaceID = "INPUT_SCW_CONTAINERS_NAMESPACE_ID"
+	EnvContainerPort        = "INPUT_SCW_CONTAINER_PORT"
+	EnvDNS                  = "INPUT_SCW_DNS"
+	EnvDNSPrefix            = "INPUT_SCW_DNS_PREFIX"
+	EnvRegion               = "INPUT_SCW_REGION"
+	EnvPathRegistry         = "INPUT_SCW_REGISTRY"
+	EnvProjectID            = "INPUT_SCW_PROJECT_ID"
+	EnvSecretKey            = "INPUT_SCW_SECRET_KEY"
+	EnvMemoryLimit          = "INPUT_SCW_MEMORY_LIMIT"
+	EnvMinScale             = "INPUT_SCW_MIN_SCALE"
+	EnvMaxScale             = "INPUT_SCW_MAX_SCALE"
+	EnvMaxConcurrency       = "INPUT_SCW_MAX_CONCURRENCY"
+	EnvCPULimit             = "INPUT_SCW_CPU_LIMIT"
+	EnvSandbox              = "INPUT_SCW_SANDBOX"
+	EnvRootZone             = "INPUT_ROOT_ZONE"
+	EnvEnvironmentVariables = "INPUT_SCW_ENVIRONMENT_VARIABLES"
+	EnvSecrets              = "INPUT_SCW_SECRETS"
 )
 
 var (
@@ -121,8 +121,6 @@ func DeployContainer(
 	Namespace *container.Namespace,
 	ContainerName string,
 	PathRegistry string,
-	EnvironmentVariables map[string]string,
-	Secrets []*container.Secret,
 ) (*container.Container, error) {
 
 	fmt.Println("Container Name: ", ContainerName)
@@ -135,7 +133,7 @@ func DeployContainer(
 
 		fmt.Println("Container already exists and will be updated", ExistingContainer)
 
-		Container, err := UpdateDeployedContainer(Client, ExistingContainer, PathRegistry, EnvironmentVariables, Secrets)
+		Container, err := UpdateDeployedContainer(Client, ExistingContainer, PathRegistry)
 
 		if err != nil {
 			fmt.Println("unable to redeploy this serverless container : ", err)
@@ -148,7 +146,7 @@ func DeployContainer(
 		return container, err
 
 	} else {
-		Container, err := CreateContainerAndDeploy(Client, Namespace, PathRegistry, EnvironmentVariables, Secrets, ContainerName)
+		Container, err := CreateContainerAndDeploy(Client, Namespace, PathRegistry, ContainerName)
 
 		if err != nil {
 			fmt.Println("unable to create or deploy a serverless container : ", err)
@@ -167,7 +165,7 @@ func SetupDomain(Client *scw.Client, Container *container.Container) (*container
 
 	if DNSName != "" {
 
-		Hostname, err := AddDNSRecord(Client, Container, DNSName)
+		Hostname, err := SetDNSRecord(Client, Container, DNSName)
 
 		if err != nil {
 			fmt.Println("unable to set DNS record: ", err)
@@ -199,24 +197,23 @@ func Deploy(
 	Client *scw.Client,
 	Region scw.Region,
 	PathRegistry string,
-	EnvironmentVariables map[string]string,
-	Secrets []*container.Secret,
 ) (*container.Container, *container.Domain, error) {
 
 	// Create or get a serverless container namespace
 	namespaceContainer, err := GetContainersNamespace(Client, Region)
 
-	WaitForNamespaceReady(Client, namespaceContainer)
-
 	if err != nil {
-		fmt.Println("unable to create or get a namespace serverless container : ", err)
+		fmt.Println("unable to get a namespace serverless container : ", err)
 		os.Exit(1)
 		return nil, nil, err
 	}
 
+	WaitForNamespaceReady(Client, namespaceContainer)
+
+
 	ContainerName := GetContainerName(PathRegistry)
 
-	Container, err := DeployContainer(Client, namespaceContainer, ContainerName, PathRegistry, EnvironmentVariables, Secrets)
+	Container, err := DeployContainer(Client, namespaceContainer, ContainerName, PathRegistry)
 
 	if err != nil {
 		fmt.Println("unable to deploy a serverless container : ", err)
@@ -281,26 +278,10 @@ func getKeyValue(key string) map[string]string {
 	return KeyValue
 }
 
-func getSecrets() []*container.Secret {
-	SecretsMap := getKeyValue(EnvSecrets)
-	Secrets := make([]*container.Secret, 0)
-
-	for key, value := range SecretsMap {
-		Secrets = append(Secrets, &container.Secret{
-			Key:   key,
-			Value: &value,
-		})
-	}
-
-	return Secrets
-}
-
 func main() {
 	PathRegistry := os.Getenv(EnvPathRegistry)
 	MaybeRegion := envOr(EnvRegion, "fr-par")
 	Type := envOr(EnvType, "deploy")
-	EnvironmentVariables := getKeyValue(EnvEnvironmentVariables)
-	Secrets := getSecrets()
 
 	if PathRegistry == "" {
 		fmt.Println("Env Registry is not set")
@@ -326,7 +307,7 @@ func main() {
 	}
 
 	if Type == "deploy" {
-		Container, Domain, err := Deploy(Client, Region, PathRegistry, EnvironmentVariables, Secrets)
+		Container, Domain, err := Deploy(Client, Region, PathRegistry)
 
 		if err != nil {
 			fmt.Println("unable to deploy: ", err)
