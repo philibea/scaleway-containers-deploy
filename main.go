@@ -91,24 +91,27 @@ func CreateClient(Region scw.Region) (*scw.Client, error) {
 }
 
 func GetContainerName(PathRegistry string) string {
-
 	const maxLength = 34
 
-	var name string
-	// rg.fr-par.scw.cloud/testing/images:latest
+	// Split the path by "/"
+	pathSegments := strings.Split(PathRegistry, "/")
+	if len(pathSegments) < 2 {
+		// If the path doesn't have the expected format, return an empty string
+		return ""
+	}
 
-	// splitPath := strings.Split(PathRegistry, "/")
-	// name = splitPath[2]
-	// name = strings.ReplaceAll(name, ":", "")
-	// name = strings.ReplaceAll(name, "-", "")
+	// The last part before the colon contains the container name
+	lastSegment := pathSegments[len(pathSegments)-1]
 
-	// limitation of naming container with 20 characters
-	splitPath := strings.Split(PathRegistry, ":")
-	name = splitPath[1]
+	// Split by ":" to remove the tag (e.g., "latest")
+	nameParts := strings.Split(lastSegment, ":")
+	name := nameParts[0]
 
+	// Remove unwanted characters
 	name = strings.ReplaceAll(name, "-", "")
 	name = strings.ReplaceAll(name, "_", "")
 
+	// Truncate if it exceeds the max length
 	if len(name) > maxLength {
 		name = name[:maxLength]
 	}
