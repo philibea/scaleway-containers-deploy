@@ -1,5 +1,5 @@
-
-scw-container-deploy
-.env
-.env.*
-run.sh
+node_modules/
+dist/
+lib/
+*.log
+.DS_Store
